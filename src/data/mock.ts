@@ -1,0 +1,374 @@
+/**
+ * داده‌ی نمونه برای نسخه‌ی نمایشی.
+ * هیچ ذخیره‌سازی‌ای وجود ندارد؛ همه‌چیز در همین فایل ساخته می‌شود.
+ * ساختار عیناً همان چیزی است که بعداً به جدول‌های SQLite وصل می‌شود.
+ */
+
+export type SeriesId =
+  | 'ghalamchi'
+  | 'capsule'
+  | 'mostamar1'
+  | 'nobat1'
+  | 'mostamar2'
+  | 'nobat2'
+  | 'maz';
+
+/** درصدی = از ۱۰۰ ، نمره‌ای = از ۲۰ */
+export type SeriesKind = 'percent' | 'score';
+
+export interface ExamSeries {
+  id: SeriesId;
+  name: string;
+  short: string;
+  color: string;
+  maxScore: number;
+  kind: SeriesKind;
+  /** بعضی دانش‌آموزها این سری را ندارند (مثل ماز) */
+  optional: boolean;
+  hasTemplate: boolean;
+  templateNote: string;
+  thresholds: { strong: number; good: number; pass: number };
+}
+
+export interface ClassRoom {
+  id: string;
+  name: string;
+  grade: string;
+  teacher: string;
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+  weight: number;
+  difficulty: number;
+}
+
+export interface Student {
+  id: string;
+  name: string;
+  code: string;
+  classId: string;
+  phone: string;
+  guardian: string;
+  ability: number;
+  trend: number;
+  /** آزمون ماز را دارد یا نه */
+  maz: boolean;
+}
+
+export interface Exam {
+  id: string;
+  seriesId: SeriesId;
+  classId: string;
+  title: string;
+  date: string;
+  kind: string;
+  maxScore: number;
+  round: number;
+}
+
+export interface Score {
+  studentId: string;
+  examId: string;
+  subjectId: string;
+  value: number;
+}
+
+export type NoteKind = 'تذکر' | 'تشویق' | 'غیبت' | 'مشاوره';
+
+export interface DisciplineNote {
+  id: string;
+  studentId: string;
+  date: string;
+  kind: NoteKind;
+  text: string;
+  by: string;
+}
+
+export interface ImportRecord {
+  id: string;
+  fileName: string;
+  seriesId: SeriesId;
+  method: 'PDF متنی' | 'عکس (OCR)' | 'ورود دستی' | 'اکسل';
+  rows: number;
+  date: string;
+  status: 'ثبت شد' | 'نیازمند بازبینی';
+  by: string;
+}
+
+/* ------------------------------------------------------------------ */
+
+const t = { strong: 85, good: 70, pass: 50 };
+
+export const series: ExamSeries[] = [
+  {
+    id: 'ghalamchi',
+    name: 'قلمچی',
+    short: 'قلمچی',
+    color: '#4c6ef5',
+    maxScore: 100,
+    kind: 'percent',
+    optional: false,
+    hasTemplate: true,
+    templateNote: 'درصدی — ۱۲ ستون درس',
+    thresholds: { ...t },
+  },
+  {
+    id: 'capsule',
+    name: 'کپسول',
+    short: 'کپسول',
+    color: '#0ca678',
+    maxScore: 20,
+    kind: 'score',
+    optional: false,
+    hasTemplate: false,
+    templateNote: 'نمره‌ای از ۲۰ — قالب PDF ساخته نشده',
+    thresholds: { ...t },
+  },
+  {
+    id: 'mostamar1',
+    name: 'مستمر اول',
+    short: 'مستمر اول',
+    color: '#f59f00',
+    maxScore: 20,
+    kind: 'score',
+    optional: false,
+    hasTemplate: false,
+    templateNote: 'نمره‌ای از ۲۰ — قالب PDF ساخته نشده',
+    thresholds: { ...t },
+  },
+  {
+    id: 'nobat1',
+    name: 'نوبت اول',
+    short: 'نوبت اول',
+    color: '#e8590c',
+    maxScore: 20,
+    kind: 'score',
+    optional: false,
+    hasTemplate: false,
+    templateNote: 'نمره‌ای از ۲۰ — قالب PDF ساخته نشده',
+    thresholds: { ...t },
+  },
+  {
+    id: 'mostamar2',
+    name: 'مستمر دوم',
+    short: 'مستمر دوم',
+    color: '#12b886',
+    maxScore: 20,
+    kind: 'score',
+    optional: false,
+    hasTemplate: false,
+    templateNote: 'نمره‌ای از ۲۰ — قالب PDF ساخته نشده',
+    thresholds: { ...t },
+  },
+  {
+    id: 'nobat2',
+    name: 'نوبت دوم',
+    short: 'نوبت دوم',
+    color: '#d6336c',
+    maxScore: 20,
+    kind: 'score',
+    optional: false,
+    hasTemplate: false,
+    templateNote: 'نمره‌ای از ۲۰ — قالب PDF ساخته نشده',
+    thresholds: { ...t },
+  },
+  {
+    id: 'maz',
+    name: 'ماز',
+    short: 'ماز',
+    color: '#7048e8',
+    maxScore: 100,
+    kind: 'percent',
+    optional: true,
+    hasTemplate: true,
+    templateNote: 'درصدی — اختیاری، همه‌ی دانش‌آموزها ندارند',
+    thresholds: { ...t },
+  },
+];
+
+export const classes: ClassRoom[] = [
+  // پایه دوازدهم — ۱۲۱ تا ۱۲۶
+  { id: 'c121', name: '۱۲۱', grade: 'دوازدهم', teacher: 'خانم موسوی' },
+  { id: 'c122', name: '۱۲۲', grade: 'دوازدهم', teacher: 'خانم موسوی' },
+  { id: 'c123', name: '۱۲۳', grade: 'دوازدهم', teacher: 'آقای رستمی' },
+  { id: 'c124', name: '۱۲۴', grade: 'دوازدهم', teacher: 'آقای رستمی' },
+  { id: 'c125', name: '۱۲۵', grade: 'دوازدهم', teacher: 'خانم کاظمی' },
+  { id: 'c126', name: '۱۲۶', grade: 'دوازدهم', teacher: 'خانم کاظمی' },
+  // پایه یازدهم — ۱۱۱ تا ۱۱۶
+  { id: 'c111', name: '۱۱۱', grade: 'یازدهم', teacher: 'آقای شریفی' },
+  { id: 'c112', name: '۱۱۲', grade: 'یازدهم', teacher: 'آقای شریفی' },
+  { id: 'c113', name: '۱۱۳', grade: 'یازدهم', teacher: 'خانم موسوی' },
+  { id: 'c114', name: '۱۱۴', grade: 'یازدهم', teacher: 'آقای رستمی' },
+  { id: 'c115', name: '۱۱۵', grade: 'یازدهم', teacher: 'خانم کاظمی' },
+  { id: 'c116', name: '۱۱۶', grade: 'یازدهم', teacher: 'آقای شریفی' },
+];
+
+export const subjects: Subject[] = [
+  { id: 'math', name: 'ریاضی', weight: 4, difficulty: 0.89 },
+  { id: 'science', name: 'علوم تجربی', weight: 3, difficulty: 0.93 },
+  { id: 'literature', name: 'ادبیات فارسی', weight: 4, difficulty: 1.0 },
+  { id: 'arabic', name: 'عربی', weight: 2, difficulty: 0.87 },
+  { id: 'english', name: 'زبان انگلیسی', weight: 3, difficulty: 0.92 },
+  { id: 'social', name: 'مطالعات اجتماعی', weight: 2, difficulty: 1.02 },
+  { id: 'religion', name: 'قرآن و دینی', weight: 2, difficulty: 1.06 },
+  { id: 'physics', name: 'فیزیک', weight: 2, difficulty: 0.86 },
+  { id: 'chemistry', name: 'شیمی', weight: 2, difficulty: 0.9 },
+  { id: 'biology', name: 'زیست‌شناسی', weight: 2, difficulty: 0.95 },
+  { id: 'defense', name: 'آمادگی دفاعی', weight: 1, difficulty: 1.1 },
+  { id: 'thinking', name: 'تفکر و سبک زندگی', weight: 1, difficulty: 1.07 },
+];
+
+const rawStudents: Array<[string, string, number, number]> = [
+  // نام، کلاس، توانایی پایه، روند پیشرفت در هر آزمون
+  ['علی رضایی', 'c121', 0.91, 0.02],
+  ['حسین قاسمی', 'c121', 0.86, 0.01],
+  ['یاسین رحیمی', 'c121', 0.78, 0.015],
+  ['مهدی حسینی', 'c122', 0.84, -0.02],
+  ['رضا نجفی', 'c122', 0.72, 0.005],
+  ['محمدرضا بهرامی', 'c122', 0.65, 0.0],
+  ['محمد احمدی', 'c123', 0.88, 0.01],
+  ['امیرعلی توکلی', 'c123', 0.75, -0.015],
+  ['پارسا صادقی', 'c123', 0.58, 0.025],
+  ['امیرحسین کریمی', 'c124', 0.8, -0.005],
+  ['طاها نوری', 'c124', 0.69, 0.01],
+  ['سینا مرادی', 'c124', 0.62, 0.035],
+  ['سهیل اکبری', 'c125', 0.77, -0.01],
+  ['آرش شریفی', 'c125', 0.66, 0.03],
+  ['کیان میرزایی', 'c125', 0.54, 0.015],
+  ['ابوالفضل یوسفی', 'c126', 0.83, 0.02],
+  ['محمدطاها جعفری', 'c126', 0.71, -0.01],
+  ['عرفان مرادپور', 'c126', 0.49, 0.01],
+  ['سبحان فلاحی', 'c111', 0.89, 0.015],
+  ['متین ارجمند', 'c111', 0.74, 0.0],
+  ['نیما دهقان', 'c111', 0.6, -0.02],
+  ['ایلیا سلیمانی', 'c112', 0.81, 0.02],
+  ['پویا خسروی', 'c112', 0.7, 0.005],
+  ['بردیا نظامی', 'c112', 0.52, 0.03],
+  ['سامان مقدم', 'c113', 0.85, 0.01],
+  ['یوسف امینی', 'c113', 0.67, -0.015],
+  ['امیرمحمد شایان', 'c113', 0.56, 0.02],
+  ['محمدمهدی زارع', 'c114', 0.79, 0.035],
+  ['علی‌اصغر کوهی', 'c114', 0.63, -0.005],
+  ['هادی برزگر', 'c114', 0.47, 0.01],
+  ['فرزین رادمنش', 'c115', 0.76, 0.005],
+  ['مبین سپهری', 'c115', 0.61, 0.025],
+  ['امیرعباس گودرزی', 'c115', 0.5, -0.01],
+  ['شایان ملکی', 'c116', 0.73, 0.015],
+  ['محمدعمرانی', 'c116', 0.59, 0.03],
+  ['یاسین عبدی', 'c116', 0.44, 0.02],
+];
+
+export const students: Student[] = rawStudents.map(([name, classId, ability, trend], i) => ({
+  id: `s${i + 1}`,
+  name,
+  code: String(4010 + i),
+  classId,
+  phone: `0912${String(1000000 + i * 13457).slice(0, 7)}`,
+  guardian: ['پدر', 'مادر'][i % 2],
+  ability,
+  trend,
+  maz: i % 3 !== 0,
+}));
+
+const roundsOf: Record<SeriesId, Array<{ title: string; date: string; diff: number; kind: string }>> = {
+  ghalamchi: [
+    { title: 'قلمچی ۱', date: '1404-08-15', diff: 0.94, kind: 'آزمون' },
+    { title: 'قلمچی ۲', date: '1404-09-13', diff: 0.93, kind: 'آزمون' },
+    { title: 'قلمچی ۳', date: '1404-10-11', diff: 0.95, kind: 'آزمون' },
+    { title: 'قلمچی ۴', date: '1404-11-09', diff: 0.96, kind: 'آزمون' },
+  ],
+  capsule: [
+    { title: 'کپسول ۱', date: '1404-09-20', diff: 0.95, kind: 'آزمون' },
+    { title: 'کپسول ۲', date: '1404-11-22', diff: 0.97, kind: 'آزمون' },
+  ],
+  mostamar1: [{ title: 'مستمر اول', date: '1404-09-05', diff: 1.0, kind: 'مستمر' }],
+  nobat1: [{ title: 'نوبت اول', date: '1404-10-10', diff: 0.99, kind: 'نوبت' }],
+  mostamar2: [{ title: 'مستمر دوم', date: '1404-11-14', diff: 0.98, kind: 'مستمر' }],
+  nobat2: [{ title: 'نوبت دوم', date: '1404-12-10', diff: 0.97, kind: 'نوبت' }],
+  maz: [
+    { title: 'ماز ۱', date: '1404-09-27', diff: 0.92, kind: 'آزمون' },
+    { title: 'ماز ۲', date: '1404-11-20', diff: 0.94, kind: 'آزمون' },
+  ],
+};
+
+let seed = 20251123;
+function rnd(): number {
+  seed = (seed * 1664525 + 1013904223) % 4294967296;
+  return seed / 4294967296;
+}
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+export const exams: Exam[] = [];
+export const scores: Score[] = [];
+
+for (const s of series) {
+  roundsOf[s.id].forEach((round, roundIndex) => {
+    for (const cls of classes) {
+      const examId = `${s.id}-${roundIndex + 1}-${cls.id}`;
+      exams.push({
+        id: examId,
+        seriesId: s.id,
+        classId: cls.id,
+        title: round.title,
+        date: round.date,
+        kind: round.kind,
+        maxScore: s.maxScore,
+        round: roundIndex + 1,
+      });
+
+      for (const student of students.filter((st) => st.classId === cls.id)) {
+        // ماز اختیاری است؛ بعضی دانش‌آموزها نمره‌ی آن را ندارند
+        if (s.optional && !student.maz) continue;
+        for (const subject of subjects) {
+          const base =
+            student.ability *
+            subject.difficulty *
+            round.diff *
+            (1 + student.trend * roundIndex * 1.4) +
+            (rnd() - 0.5) * 0.07;
+          const ratio = clamp(base, 0.12, 1);
+          let value = ratio * s.maxScore;
+          value = s.kind === 'percent' ? Math.round(value) : Math.round(value * 4) / 4;
+          scores.push({ studentId: student.id, examId, subjectId: subject.id, value });
+        }
+      }
+    }
+  });
+}
+
+export const disciplineNotes: DisciplineNote[] = [
+  { id: 'n1', studentId: 's1', date: '1404-08-22', kind: 'تشویق', text: 'همکاری خوب در فعالیت گروهی کلاس', by: 'خانم موسوی' },
+  { id: 'n2', studentId: 's9', date: '1404-09-02', kind: 'تذکر', text: 'صحبت با هم‌کلاسی هنگام تدریس', by: 'آقای رستمی' },
+  { id: 'n3', studentId: 's15', date: '1404-09-11', kind: 'غیبت', text: 'غیبت بدون اطلاع — دو جلسه', by: 'خانم کاظمی' },
+  { id: 'n4', studentId: 's15', date: '1404-10-03', kind: 'مشاوره', text: 'جلسه‌ی مشاوره برای برنامه‌ی مطالعه', by: 'خانم کاظمی' },
+  { id: 'n5', studentId: 's5', date: '1404-10-08', kind: 'تشویق', text: 'بهترین پیشرفت ماه در درس ریاضی', by: 'خانم موسوی' },
+  { id: 'n6', studentId: 's10', date: '1404-10-19', kind: 'تذکر', text: 'تأخیر در تحویل تکالیف هفتگی', by: 'آقای رستمی' },
+  { id: 'n7', studentId: 's12', date: '1404-11-01', kind: 'تشویق', text: 'ارائه‌ی خوب کنفرانس علوم', by: 'آقای رستمی' },
+  { id: 'n8', studentId: 's9', date: '1404-11-06', kind: 'تذکر', text: 'استفاده از موبایل در زمان کلاس', by: 'آقای رستمی' },
+  { id: 'n9', studentId: 's2', date: '1404-11-12', kind: 'تشویق', text: 'مسئولیت‌پذیری در نظم کلاس', by: 'خانم موسوی' },
+  { id: 'n10', studentId: 's14', date: '1404-11-18', kind: 'مشاوره', text: 'گفتگو درباره‌ی افت نمره‌های اخیر', by: 'خانم کاظمی' },
+  { id: 'n11', studentId: 's20', date: '1404-11-05', kind: 'تشویق', text: 'کمک به هم‌کلاسی در حل تمرین‌های ریاضی', by: 'آقای شریفی' },
+  { id: 'n12', studentId: 's27', date: '1404-11-11', kind: 'تذکر', text: 'صحبت با هم‌کلاسی هنگام تدریس', by: 'خانم موسوی' },
+  { id: 'n13', studentId: 's31', date: '1404-11-16', kind: 'مشاوره', text: 'برنامه‌ریزی برای آزمون جامع', by: 'خانم کاظمی' },
+  { id: 'n14', studentId: 's34', date: '1404-11-20', kind: 'غیبت', text: 'غیبت بدون اطلاع — یک جلسه', by: 'آقای شریفی' },
+];
+
+export const imports: ImportRecord[] = [
+  { id: 'i1', fileName: 'ghalamchi-04-121.pdf', seriesId: 'ghalamchi', method: 'PDF متنی', rows: 3, date: '1404-11-09', status: 'ثبت شد', by: 'خانم موسوی' },
+  { id: 'i2', fileName: 'ghalamchi-04-123.pdf', seriesId: 'ghalamchi', method: 'PDF متنی', rows: 3, date: '1404-11-10', status: 'ثبت شد', by: 'آقای رستمی' },
+  { id: 'i3', fileName: 'nobat1-121.jpg', seriesId: 'nobat1', method: 'عکس (OCR)', rows: 3, date: '1404-11-15', status: 'نیازمند بازبینی', by: 'آقای شریفی' },
+  { id: 'i4', fileName: 'maz-02-125.pdf', seriesId: 'maz', method: 'PDF متنی', rows: 3, date: '1404-11-21', status: 'ثبت شد', by: 'خانم کاظمی' },
+];
+
+export const currentUser = { name: 'خانم موسوی', role: 'مدیر و دبیر', username: 'mousavi' };
+
+/* ---------- helpers for lookups ---------- */
+
+export const subjectById = (id: string) => subjects.find((s) => s.id === id)!;
+export const classById = (id: string) => classes.find((c) => c.id === id)!;
+export const studentById = (id: string) => students.find((s) => s.id === id);
+export const examById = (id: string) => exams.find((e) => e.id === id);
+export const seriesById = (id: SeriesId) => series.find((s) => s.id === id)!;
