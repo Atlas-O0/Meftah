@@ -20,6 +20,7 @@ import {
   recordKinds,
   scores,
   series,
+  seriesById,
   seriesGroups,
   studentById,
   subjectsForClassSeries,
@@ -30,6 +31,7 @@ import {
 import { fa, faDate, faPct, faScore, initials } from '../lib/fa';
 import { todayJalali } from '../lib/jalali';
 import { addRecord, categoryTone, kindTone, useStudentRecords } from '../lib/records';
+import { subjectLevel } from '../lib/thresholds';
 import {
   examsForClassSeries,
   growthForStudent,
@@ -445,11 +447,16 @@ export default function StudentProfile({ id }: { id: string }) {
                       const score = scores.find(
                         (s) => s.studentId === student.id && s.examId === exam.id && s.subjectId === subject.id,
                       );
-                      const p = score ? (score.value / exam.maxScore) * 100 : 0;
+                      const kind = seriesById(exam.seriesId).kind;
+                      const level = score ? subjectLevel(score.value, exam.maxScore, subject.id, kind) : null;
                       return (
                         <div className="score-row" key={subject.id}>
                           <span className="muted tiny">{subject.name}</span>
-                          <span className={`s tiny${p < 50 ? ' low' : ''}`}>
+                          <span
+                            className={`s tiny${level?.tone === 'red' ? ' low' : ''}`}
+                            style={level?.tone === 'amber' ? { color: '#f59f00' } : undefined}
+                            title={level ? `${level.label}` : undefined}
+                          >
                             {faScore(score?.value)} / {fa(exam.maxScore)}
                           </span>
                         </div>

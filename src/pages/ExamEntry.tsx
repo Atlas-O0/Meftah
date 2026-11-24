@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { classes, examById, scores, series, students, subjectsForClassSeries } from '../data/mock';
 import { fa, faDate, faPct, faScore } from '../lib/fa';
 import { saveExamScores, type SaveScoresResult } from '../lib/scores';
+import { subjectLevel, thresholdsFor } from '../lib/thresholds';
 import { Badge, Card, Icon } from '../components/ui';
 
 export default function ExamEntry({ id }: { id: string }) {
@@ -110,14 +111,18 @@ export default function ExamEntry({ id }: { id: string }) {
             <thead>
               <tr>
                 <th style={{ position: 'sticky', right: 0, background: '#fbfcfe', zIndex: 2 }}>دانش‌آموز</th>
-                {examSubjects.map((subject) => (
-                  <th key={subject.id} style={{ minWidth: 74, textAlign: 'center' }}>
-                    {subject.name}
-                    <div className="tiny muted" style={{ fontWeight: 400 }}>
-                      ضریب {fa(subject.weight)}
-                    </div>
-                  </th>
-                ))}
+                {examSubjects.map((subject) => {
+                  const border = thresholdsFor(subject.id, seriesItem.kind);
+                  return (
+                    <th key={subject.id} style={{ minWidth: 74, textAlign: 'center' }}>
+                      {subject.name}
+                      <div className="tiny muted" style={{ fontWeight: 400 }}>
+                        ضریب {fa(subject.weight)} · متوسط از{' '}
+                        {seriesItem.kind === 'percent' ? `${fa(border.pass)}٪` : faScore(border.pass)}
+                      </div>
+                    </th>
+                  );
+                })}
                 <th style={{ textAlign: 'center' }}>درصد</th>
               </tr>
             </thead>
@@ -156,10 +161,19 @@ export default function ExamEntry({ id }: { id: string }) {
                             onChange={(e) => setValues((prev) => ({ ...prev, [key]: e.target.value }))}
                             placeholder="—"
                           />
-                          {!Number.isNaN(numeric) && numeric < exam.maxScore * 0.5 && (
-                            <div className="tiny" style={{ color: '#f03e3e', textAlign: 'center' }}>
-                              {faScore(numeric)}
-                            </div>
+                          {!Number.isNaN(numeric) && values[key] !== '' && (
+                            (() => {
+                              const level = subjectLevel(numeric, exam.maxScore, subject.id, seriesItem.kind);
+                              if (level.tone === 'green') return null;
+                              return (
+                                <div
+                                  className="tiny"
+                                  style={{ color: level.tone === 'red' ? '#f03e3e' : '#f59f00', textAlign: 'center' }}
+                                >
+                                  {level.tone === 'red' ? 'زیر متوسط' : 'متوسط'}
+                                </div>
+                              );
+                            })()
                           )}
                         </td>
                       );

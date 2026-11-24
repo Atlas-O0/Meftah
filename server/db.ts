@@ -53,6 +53,10 @@ db.exec(`
     text TEXT NOT NULL,
     by_name TEXT NOT NULL DEFAULT ''
   );
+  CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
   CREATE TABLE IF NOT EXISTS log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     at TEXT NOT NULL,
@@ -231,6 +235,38 @@ export function clearAll() {
     db.exec('DELETE FROM scores; DELETE FROM exams; DELETE FROM records; DELETE FROM students;');
     db.prepare('INSERT INTO log (at, note) VALUES (?, ?)').run(new Date().toISOString(), 'clear all');
   })();
+}
+
+/* ---------------------- تنظیمات (مرز درس‌ها و…) ---------------------- */
+
+export function getSettings(): Record<string, unknown> {
+  const rows = db.query('SELECT key, value FROM settings').all() as { key: string; value: string }[];
+  const result: Record<string, unknown> = {};
+  for (const row of rows) {
+    try {
+      result[row.key] = JSON.parse(row.value);
+    } catch {
+      result[row.key] = row.value;
+    }
+  }
+  return result;
+}
+
+export function saveSettings(patch: Record<string, unknown>) {
+  const upsert = db.prepare(`
+    INSERT INTO settings (key, value) VALUES (?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+  `);
+  db.transaction(() => {
+    for (const [key, value] of Object.entries(patch ?? {})) {
+      upsert.run(key, JSON.stringify(value));
+    }
+    db.prepare('INSERT INTO log (at, note) VALUES (?, ?)').run(
+      new Date().toISOString(),
+      `settings: ${Object.keys(patch ?? {}).join(', ')}`,
+    );
+  })();
+  return getSettings();
 }
 
 export function stats() {

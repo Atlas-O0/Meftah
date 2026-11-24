@@ -112,3 +112,35 @@ export async function pushClear(): Promise<boolean> {
 }
 
 export const backupUrl = () => apiUrl('/api/backup');
+
+/* ---------------- تنظیمات ذخیره‌شده روی سرور ---------------- */
+
+export interface AppSettings {
+  subjectThresholds?: Record<string, unknown>;
+}
+
+export async function fetchSettings(): Promise<AppSettings | null> {
+  if (!online) return null;
+  try {
+    const response = await fetch(apiUrl('/api/settings'), { cache: 'no-store' });
+    if (!response.ok) return null;
+    const data = (await response.json()) as { settings?: AppSettings };
+    return data.settings ?? {};
+  } catch {
+    return null;
+  }
+}
+
+export async function saveSettings(patch: AppSettings): Promise<boolean> {
+  if (!online) return false;
+  try {
+    const response = await fetch(apiUrl('/api/settings'), {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}

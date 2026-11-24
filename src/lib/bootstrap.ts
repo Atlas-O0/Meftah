@@ -9,6 +9,7 @@ import { fetchServerData, probeServer, pushPatch } from './api';
 import { isLoggedIn, markLoggedOut } from './auth';
 import { loadSavedImports } from './persist';
 import { replaceRecords } from './records';
+import { initSubjectThresholds } from './thresholds';
 
 export const dataSource = {
   online: false,
@@ -44,6 +45,7 @@ export async function initDataSource(): Promise<void> {
   scores.length = 0;
   scores.push(...data.scores);
   replaceRecords(data.records);
+  await initSubjectThresholds();
 
   dataSource.loadedAt = new Date().toISOString();
 }

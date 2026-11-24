@@ -7,7 +7,18 @@
 
 import { existsSync, statSync } from 'node:fs';
 import { join, normalize, resolve } from 'node:path';
-import { BACKUP_DIR, DB_PATH, applyPatch, bootstrap, clearAll, createBackup, stats, type DataPatch } from './db';
+import {
+  BACKUP_DIR,
+  DB_PATH,
+  applyPatch,
+  bootstrap,
+  clearAll,
+  createBackup,
+  getSettings,
+  saveSettings,
+  stats,
+  type DataPatch,
+} from './db';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? '127.0.0.1';
@@ -52,7 +63,7 @@ const corsHeaders = (origin: string | null): Record<string, string> =>
       }
     : {};
 
-const PROTECTED = ['/api/bootstrap', '/api/patch', '/api/clear', '/api/backup'];
+const PROTECTED = ['/api/bootstrap', '/api/patch', '/api/clear', '/api/backup', '/api/settings'];
 
 const json = (data: unknown, status = 200, origin: string | null = null) =>
   Response.json(data, { status, headers: { 'cache-control': 'no-store', ...corsHeaders(origin) } });
@@ -86,6 +97,21 @@ const server = Bun.serve({
     const { pathname } = url;
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(origin) });
+
+    if (pathname === '/api/settings' && request.method === 'GET') {
+      if (!isAuthed(request)) return json({ ok: false, error: 'برای دسترسی باید وارد شوی' }, 401, origin);
+      return json({ ok: true, settings: getSettings() }, 200, origin);
+    }
+
+    if (pathname === '/api/settings' && request.method === 'POST') {
+      if (!isAuthed(request)) return json({ ok: false, error: 'برای دسترسی باید وارد شوی' }, 401, origin);
+      try {
+        const body = (await request.json()) as Record<string, unknown>;
+        return json({ ok: true, settings: saveSettings(body) }, 200, origin);
+      } catch (error) {
+        return json({ ok: false, error: String(error) }, 400, origin);
+      }
+    }
 
     if (pathname === '/api/health') {
       return json({ ok: true, database: DB_PATH, backupDir: BACKUP_DIR, counts: stats() }, 200, origin);

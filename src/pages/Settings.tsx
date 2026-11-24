@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   classes,
   series,
@@ -12,6 +12,13 @@ import { fa, faPct, faScore } from '../lib/fa';
 import { getDataMode, setDataMode } from '../lib/mode';
 import { backupUrl, fetchHealth, isServerOnline, type ServerHealth } from '../lib/api';
 import { dataSource } from '../lib/bootstrap';
+import {
+  SCORE_LIMIT,
+  defaultSubjectThresholds,
+  getSubjectThresholds,
+  setSubjectThresholds,
+  type SubjectThresholdMap,
+} from '../lib/thresholds';
 import { Badge, Card, Icon, Progress } from '../components/ui';
 
 const teachers = [
@@ -37,6 +44,8 @@ export default function Settings() {
   };
 
   const mode = getDataMode();
+  const [subjectThresholds, setDraft] = useState<SubjectThresholdMap>(() => getSubjectThresholds());
+  const [savedNotice, setSavedNotice] = useState('');
   const online = isServerOnline() || dataSource.online;
   const [health, setHealth] = useState<ServerHealth | null>(null);
 
@@ -191,6 +200,114 @@ export default function Settings() {
               ))}
             </tbody>
           </table>
+        </div>
+      </Card>
+
+      <Card
+        title="مرز نمره‌ی هر درس"
+        subtitle="برای هر درس جدا تعیین کن چه نمره‌ای «خوب» و چه نمره‌ای «متوسط» است؛ تستی با درصد، تشریحی با نمره"
+        action={<Badge tone="blue">قابل ویرایش</Badge>}
+        flush
+      >
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th rowSpan={2}>درس</th>
+                <th colSpan={2} style={{ textAlign: 'center' }}>
+                  تستی (درصد از ۱۰۰)
+                </th>
+                <th colSpan={2} style={{ textAlign: 'center' }}>
+                  تشریحی (نمره از {fa(SCORE_LIMIT)})
+                </th>
+                <th rowSpan={2}>وضعیت نمونه</th>
+              </tr>
+              <tr>
+                <th style={{ textAlign: 'center' }}>خوب از</th>
+                <th style={{ textAlign: 'center' }}>متوسط از</th>
+                <th style={{ textAlign: 'center' }}>خوب از</th>
+                <th style={{ textAlign: 'center' }}>متوسط از</th>
+              </tr>
+            </thead>
+            <tbody>
+              {subjects.map((subject) => {
+                const current = subjectThresholds[subject.id];
+                const update = (kind: 'percent' | 'score', field: 'good' | 'pass', raw: string) => {
+                  const limit = kind === 'percent' ? 100 : SCORE_LIMIT;
+                  const value = Math.min(Math.max(Number(raw) || 0, 0), limit);
+                  setDraft((prev) => {
+                    const current = prev[subject.id][kind];
+                    const next =
+                      field === 'pass'
+                        ? { pass: value, good: Math.max(current.good, value) }
+                        : { good: value, pass: Math.min(current.pass, value) };
+                    return { ...prev, [subject.id]: { ...prev[subject.id], [kind]: next } };
+                  });
+                };
+                const sample = current.percent.pass;
+                return (
+                  <tr key={subject.id}>
+                    <td className="small bold">{subject.name}</td>
+                    {(['percent', 'score'] as const).map((kind) => (
+                      <Fragment key={kind}>
+                        <td style={{ textAlign: 'center' }}>
+                          <input
+                            className="input num"
+                            style={{ width: 62, height: 30, textAlign: 'center', padding: '0 4px' }}
+                            value={current[kind].good}
+                            onChange={(e) => update(kind, 'good', e.target.value)}
+                          />
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <input
+                            className="input num"
+                            style={{ width: 62, height: 30, textAlign: 'center', padding: '0 4px' }}
+                            value={current[kind].pass}
+                            onChange={(e) => update(kind, 'pass', e.target.value)}
+                          />
+                        </td>
+                      </Fragment>
+                    ))}
+                    <td>
+                      <Badge tone={sample >= current.percent.good ? 'green' : sample >= current.percent.pass ? 'amber' : 'red'}>
+                        تستی {faPct(sample, 0)} →{' '}
+                        {sample >= current.percent.good ? 'خوب' : sample >= current.percent.pass ? 'متوسط' : 'ضعیف'}
+                      </Badge>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="row" style={{ gap: 8, padding: '12px 16px', flexWrap: 'wrap' }}>
+          <button
+            className="btn primary"
+            onClick={() => {
+              setSubjectThresholds(subjectThresholds);
+              setSavedNotice('ذخیره شد — روی همه‌ی رنگ‌ها و برچسب‌ها اعمال می‌شود.');
+              window.setTimeout(() => setSavedNotice(''), 4000);
+            }}
+          >
+            <Icon name="check" size={15} /> ذخیره‌ی مرزها
+          </button>
+          <button
+            className="btn"
+            onClick={() => {
+              const defaults = defaultSubjectThresholds();
+              setDraft(defaults);
+              setSubjectThresholds(defaults);
+              setSavedNotice('به مقدار پیش‌فرض برگشت.');
+              window.setTimeout(() => setSavedNotice(''), 4000);
+            }}
+          >
+            پیش‌فرض
+          </button>
+          {savedNotice && (
+            <span className="small" style={{ color: '#0ca678' }}>
+              {savedNotice}
+            </span>
+          )}
         </div>
       </Card>
 
