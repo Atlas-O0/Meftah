@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { classes, examById, scores, series, students, subjectsForClass } from '../data/mock';
 import { fa, faDate, faPct, faScore } from '../lib/fa';
+import { saveExamScores, type SaveScoresResult } from '../lib/scores';
 import { Badge, Card, Icon } from '../components/ui';
 
 export default function ExamEntry({ id }: { id: string }) {
@@ -14,7 +15,7 @@ export default function ExamEntry({ id }: { id: string }) {
     }
     return initial;
   });
-  const [saved, setSaved] = useState(false);
+  const [result, setResult] = useState<SaveScoresResult | null>(null);
 
   if (!exam) {
     return (
@@ -63,8 +64,15 @@ export default function ExamEntry({ id }: { id: string }) {
           <button
             className="btn primary"
             onClick={() => {
-              setSaved(true);
-              window.setTimeout(() => setSaved(false), 3200);
+              const saved = saveExamScores(exam.id, values);
+              setResult(saved);
+              if (saved.written > 0) {
+                setValues((prev) => {
+                  const next = { ...prev };
+                  for (const [key, value] of Object.entries(saved.values)) next[key] = String(value);
+                  return next;
+                });
+              }
             }}
           >
             <Icon name="check" /> ثبت نمره‌ها
@@ -72,10 +80,23 @@ export default function ExamEntry({ id }: { id: string }) {
         </div>
       </Card>
 
-      {saved && (
+      {result && result.written > 0 && (
         <div className="alert success">
           <Icon name="check" size={16} />
-          نسخه‌ی نمایشی: نمره‌ها ذخیره نشدند. در مرحله‌ی بعد در دیتابیس ثبت می‌شوند.
+          <div>
+            {fa(result.written)} نمره ذخیره شد و در پروفایل دانش‌آموزان و نمودار سری «{seriesItem.name}» دیده می‌شود.
+            {result.empty > 0 && <> {fa(result.empty)} خانه خالی مانده است.</>}
+            {result.invalid > 0 && (
+              <span style={{ color: '#e03131' }}> {fa(result.invalid)} عدد بی‌اعتبار بود (بیشتر از {fa(exam.maxScore)}).</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {result && result.written === 0 && (
+        <div className="alert info">
+          <Icon name="alert" size={16} />
+          <div>هنوز نمره‌ای پر نشده است؛ خانه‌ها را پر کن و دوباره ثبت بزن.</div>
         </div>
       )}
 
@@ -159,8 +180,8 @@ export default function ExamEntry({ id }: { id: string }) {
       <div className="alert">
         <Icon name="alert" size={16} />
         <div>
-          این جدول همان جایی است که صفحه‌ی «بازبینی» بعد از خواندن PDF یا عکس هم از آن استفاده می‌کند؛
-          فقط خانه‌های مشکوک از قبل رنگی می‌شوند.
+          نمره‌ها با کلید «دانش‌آموز + آزمون + درس» ذخیره می‌شوند؛ ثبت دوباره همان عدد را به‌روز می‌کند، نه
+          تکراری. الآن در همین مرورگر ذخیره می‌شوند و بعد از رفرش هم می‌مانند.
         </div>
       </div>
     </div>

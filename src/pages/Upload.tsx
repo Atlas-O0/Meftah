@@ -23,6 +23,7 @@ import {
   type DraftRow,
 } from '../lib/importExcel';
 import { clearSavedImports } from '../lib/persist';
+import { getDataMode } from '../lib/mode';
 
 export default function Upload() {
   const [step, setStep] = useState(1);
@@ -507,6 +508,12 @@ export default function Upload() {
             <div className="tiny muted" style={{ maxWidth: 520 }}>
               این داده‌ها فعلاً در همین مرورگر ذخیره می‌شوند تا با رفرش پاک نشوند؛ با راه‌افتادن دیتابیس، همین
               جریان روی سرور ذخیره می‌شود.
+              {getDataMode() === 'demo' && (
+                <div style={{ marginTop: 6 }}>
+                  داده‌ی نمونه هنوز فعال است؛ برای اینکه فقط داده‌ی واقعی دیده شود، در{' '}
+                  <a href="#/settings">تنظیمات</a> دکمه‌ی «حذف داده‌ی نمونه و شروع واقعی» را بزن.
+                </div>
+              )}
               <div style={{ marginTop: 8 }}>
                 <button
                   className="btn ghost sm"

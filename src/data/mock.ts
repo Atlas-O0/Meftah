@@ -5,6 +5,7 @@
  */
 
 import { loadSavedImports } from '../lib/persist';
+import { getDataMode } from '../lib/mode';
 
 export type SeriesId =
   | 'ghalamchi'
@@ -458,6 +459,13 @@ export const classById = (id: string) => classes.find((c) => c.id === id)!;
 export const studentById = (id: string) => students.find((s) => s.id === id);
 export const examById = (id: string) => exams.find((e) => e.id === id);
 export const seriesById = (id: SeriesId) => series.find((s) => s.id === id)!;
+
+/* در حالت واقعی، داده‌ی نمونه‌ی ساختگی حذف می‌شود و فقط داده‌ی واردشده می‌ماند */
+if (getDataMode() === 'real') {
+  students.length = 0;
+  exams.length = 0;
+  scores.length = 0;
+}
 
 /* داده‌های واردشده از اکسل (در همین مرورگر ذخیره می‌شوند) */
 const savedImports = loadSavedImports();

@@ -11,6 +11,7 @@ import {
   type RecordKind,
   type StudentRecord,
 } from '../data/mock';
+import { getDataMode } from './mode';
 
 export const categoryTone: Record<RecordCategory, 'blue' | 'amber' | 'green' | 'red'> = {
   انضباطی: 'red',
@@ -27,7 +28,7 @@ export const kindTone: Record<RecordKind, 'green' | 'blue' | 'amber' | 'red' | '
   مشاوره: 'gray',
 };
 
-let items: StudentRecord[] = [...seedRecords];
+let items: StudentRecord[] = getDataMode() === 'demo' ? [...seedRecords] : [];
 const listeners = new Set<() => void>();
 
 const emit = () => listeners.forEach((listener) => listener());

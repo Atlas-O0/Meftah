@@ -9,6 +9,7 @@ import {
   type SeriesId,
 } from '../data/mock';
 import { fa, faPct, faScore } from '../lib/fa';
+import { getDataMode, setDataMode } from '../lib/mode';
 import { Badge, Card, Icon, Progress } from '../components/ui';
 
 const teachers = [
@@ -33,8 +34,52 @@ export default function Settings() {
     return { label: 'نیازمند توجه', tone: 'red' as const };
   };
 
+  const mode = getDataMode();
+
   return (
     <div className="stack">
+      <Card
+        title="داده‌ی نمونه و شروع واقعی"
+        subtitle="داده‌ی نمونه (کلاس‌ها و نمره‌های ساختگی) فقط برای دیدن ظاهر است؛ قبل از شروع سال تحصیلی حذفش کن"
+        action={<Badge tone={mode === 'demo' ? 'amber' : 'green'}>{mode === 'demo' ? 'داده‌ی نمونه فعال' : 'فقط داده‌ی واقعی'}</Badge>}
+      >
+        <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+          <div className="small" style={{ flex: 1, minWidth: 240, lineHeight: 1.9 }}>
+            در حالت واقعی، ۱۸ دانش‌آموز نمونه و همه‌ی نمره‌های ساختگی از تمام صفحه‌ها حذف می‌شوند.
+            کلاس‌ها و درس‌ها (ساختار مدرسه) می‌مانند و آپلودهای واقعی هم دست نمی‌خورند. الآن{' '}
+            {fa(students.length)} دانش‌آموز نمایش داده می‌شود.
+          </div>
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <button
+              className="btn primary"
+              disabled={mode === 'real'}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    'داده‌ی نمونه حذف شود؟ کلاس‌ها و درس‌ها می‌مانند؛ دانش‌آموزان و نمره‌های ساختگی از نمایش حذف می‌شوند. آپلودهای واقعی حفظ می‌شوند.',
+                  )
+                ) {
+                  setDataMode('real');
+                  window.location.reload();
+                }
+              }}
+            >
+              حذف داده‌ی نمونه و شروع واقعی
+            </button>
+            <button
+              className="btn"
+              disabled={mode === 'demo'}
+              onClick={() => {
+                setDataMode('demo');
+                window.location.reload();
+              }}
+            >
+              بازگرداندن داده‌ی نمونه
+            </button>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid cols-2">
         <Card title="کلاس‌ها" subtitle={`${fa(classes.length)} کلاس فعال — پایه دوازدهم`}>
           {classes.map((c) => (

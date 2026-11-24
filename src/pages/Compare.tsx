@@ -82,7 +82,19 @@ export default function Compare() {
 
   /* ---------- دانش‌آموز با دانش‌آموز ---------- */
   const a = students.find((s) => s.id === studentA) ?? students[0];
-  const b = students.find((s) => s.id === studentB) ?? students[1];
+  const b = students.find((s) => s.id === studentB) ?? students[1] ?? a;
+
+  if (!a) {
+    return (
+      <Card>
+        <div className="empty">
+          برای مقایسه‌ی دانش‌آموزها باید اول حداقل یک دانش‌آموز ثبت شده باشد. از صفحه‌ی «آپلود کارنامه»
+          یا «دانش‌آموزان» شروع کن.
+        </div>
+      </Card>
+    );
+  }
+
   const aClass = classes.find((c) => c.id === a.classId)!;
   const bClass = classes.find((c) => c.id === b.classId)!;
   const aValue = seriesValueForStudent(a.id, seriesId);
