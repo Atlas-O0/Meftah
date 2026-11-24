@@ -39,6 +39,11 @@ export const trackLabels: Record<TrackId, string> = {
   science: 'علوم تجربی',
 };
 
+export const trackShortLabels: Record<TrackId, string> = {
+  math: 'ریاضی',
+  science: 'تجربی',
+};
+
 export type SubjectTrack = 'common' | TrackId;
 
 export const subjectTrackLabels: Record<SubjectTrack, string> = {

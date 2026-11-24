@@ -121,7 +121,7 @@ export default function StudentProfile({ id }: { id: string }) {
               <Badge tone={level.tone as 'green' | 'blue' | 'amber' | 'red'}>{level.label}</Badge>
             </div>
             <div className="small muted" style={{ marginTop: 3 }}>
-              کد {fa(student.code)} · کلاس {studentClass.name} · دبیر {studentClass.teacher}
+              کد {fa(student.code)} · کلاس {studentClass.name}
             </div>
             <div className="row" style={{ gap: 14, marginTop: 10, flexWrap: 'wrap' }}>
               {orderedSeries.map((s) => {

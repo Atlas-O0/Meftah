@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { classes, series, students } from '../data/mock';
+import { classes, series, students, trackShortLabels } from '../data/mock';
 import { fa, faPct, faScore, initials } from '../lib/fa';
 import { levelForStudentInSeries, scoreAverageForStudent, seriesPercentForStudent } from '../lib/stats';
 import { Badge, Card, Icon, Modal, Progress } from '../components/ui';
@@ -16,6 +16,7 @@ export default function Students() {
       .filter((s) => s.name.includes(query.trim()) || s.code.includes(query.trim()))
       .map((s) => ({
         student: s,
+        track: classes.find((c) => c.id === s.classId)!.track,
         ghalamchi: seriesPercentForStudent(s.id, 'ghalamchi'),
         score: scoreAverageForStudent(s.id),
         level: levelForStudentInSeries(s.id, 'ghalamchi'),
@@ -71,7 +72,7 @@ export default function Students() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ student, ghalamchi, score, level }) => (
+              {rows.map(({ student, track, ghalamchi, score, level }) => (
                 <tr
                   key={student.id}
                   className="clickable"
@@ -82,9 +83,9 @@ export default function Students() {
                   <td>
                     <div className="row" style={{ gap: 9 }}>
                       <div className="avatar">{initials(student.name)}</div>
-                      <div>
-                        <div className="bold small">{student.name}</div>
-                        <div className="tiny muted">ولی: {student.guardian}</div>
+                      <div className="row" style={{ gap: 6 }}>
+                        <Badge tone={track === 'math' ? 'blue' : 'green'}>{trackShortLabels[track]}</Badge>
+                        <span className="bold small">{student.name}</span>
                       </div>
                     </div>
                   </td>
