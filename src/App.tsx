@@ -9,6 +9,7 @@ import Upload from './pages/Upload';
 import Compare from './pages/Compare';
 import Records from './pages/Records';
 import Settings from './pages/Settings';
+import { isLoggedIn } from './lib/auth';
 
 function useRoute() {
   const read = () => window.location.hash.replace(/^#/, '') || '/';
@@ -22,10 +23,11 @@ function useRoute() {
 }
 
 export default function App() {
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed] = useState(isLoggedIn);
   const path = useRoute();
 
-  if (!authed) return <Login onEnter={() => setAuthed(true)} />;
+  /* بعد از ورود، صفحه دوباره بارگذاری می‌شود تا داده‌ی دیتابیس خوانده شود */
+  if (!authed) return <Login onSuccess={() => window.location.reload()} />;
 
   const parts = path.split('/').filter(Boolean);
 

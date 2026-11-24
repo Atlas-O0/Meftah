@@ -13,14 +13,46 @@ const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? '127.0.0.1';
 const DIST = resolve(process.env.MEFTAH_DIST ?? 'dist');
 
+/* یک حساب واحد؛ با متغیرهای محیطی قابل تغییر است */
+const AUTH_USER = process.env.MEFTAH_USER ?? 'Meftah';
+const AUTH_PASS = process.env.MEFTAH_PASS ?? 'MeftahMeftah';
+const SESSION_COOKIE = 'meftah_session';
+const SESSION_TTL = 12 * 60 * 60 * 1000;
+const sessions = new Map<string, number>();
+
+function readCookie(request: Request, name: string): string | null {
+  const header = request.headers.get('cookie');
+  if (!header) return null;
+  for (const part of header.split(';')) {
+    const [key, ...rest] = part.trim().split('=');
+    if (key === name) return decodeURIComponent(rest.join('='));
+  }
+  return null;
+}
+
+function isAuthed(request: Request): boolean {
+  const token = readCookie(request, SESSION_COOKIE);
+  if (!token) return false;
+  const expires = sessions.get(token);
+  if (!expires) return false;
+  if (expires < Date.now()) {
+    sessions.delete(token);
+    return false;
+  }
+  return true;
+}
+
 const corsHeaders = (origin: string | null): Record<string, string> =>
   origin && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
     ? {
         'access-control-allow-origin': origin,
+        'access-control-allow-credentials': 'true',
         'access-control-allow-methods': 'GET, POST, OPTIONS',
         'access-control-allow-headers': 'content-type',
       }
     : {};
+
+const PROTECTED = ['/api/bootstrap', '/api/patch', '/api/clear', '/api/backup'];
 
 const json = (data: unknown, status = 200, origin: string | null = null) =>
   Response.json(data, { status, headers: { 'cache-control': 'no-store', ...corsHeaders(origin) } });
@@ -59,6 +91,54 @@ const server = Bun.serve({
       return json({ ok: true, database: DB_PATH, backupDir: BACKUP_DIR, counts: stats() }, 200, origin);
     }
 
+    if (pathname === '/api/session') {
+      return json({ ok: true, authenticated: isAuthed(request), user: AUTH_USER }, 200, origin);
+    }
+
+    if (pathname === '/api/login' && request.method === 'POST') {
+      let body: { username?: string; password?: string } = {};
+      try {
+        body = (await request.json()) as { username?: string; password?: string };
+      } catch {
+        return json({ ok: false, error: 'اطلاعات ورود ناقص است' }, 400, origin);
+      }
+      const username = String(body.username ?? '').trim();
+      const password = String(body.password ?? '');
+      if (username !== AUTH_USER || password !== AUTH_PASS) {
+        return json({ ok: false, error: 'نام کاربری یا رمز عبور اشتباه است' }, 401, origin);
+      }
+      const token = `${crypto.randomUUID()}${crypto.randomUUID()}`.replace(/-/g, '');
+      sessions.set(token, Date.now() + SESSION_TTL);
+      return Response.json(
+        { ok: true, user: AUTH_USER },
+        {
+          headers: {
+            'set-cookie': `${SESSION_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL / 1000}`,
+            'cache-control': 'no-store',
+            ...corsHeaders(origin),
+          },
+        },
+      );
+    }
+
+    if (pathname === '/api/logout' && request.method === 'POST') {
+      const token = readCookie(request, SESSION_COOKIE);
+      if (token) sessions.delete(token);
+      return Response.json(
+        { ok: true },
+        {
+          headers: {
+            'set-cookie': `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`,
+            ...corsHeaders(origin),
+          },
+        },
+      );
+    }
+
+    if (PROTECTED.includes(pathname) && !isAuthed(request)) {
+      return json({ ok: false, error: 'برای دسترسی باید وارد شوی' }, 401, origin);
+    }
+
     if (pathname === '/api/bootstrap') return json(bootstrap(), 200, origin);
 
     if (pathname === '/api/patch' && request.method === 'POST') {
@@ -93,4 +173,5 @@ const server = Bun.serve({
 console.log(`مفتاح روی http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${server.port} بالا آمد`);
 console.log(`دیتابیس: ${DB_PATH}`);
 console.log(`پشتیبان‌ها: ${BACKUP_DIR}`);
+console.log(`حساب کاربری: ${AUTH_USER} (رمز با MEFTAH_PASS قابل تغییر است)`);
 if (!existsSync(join(DIST, 'index.html'))) console.log('هشدار: dist ساخته نشده؛ فقط API در دسترس است.');

@@ -111,7 +111,7 @@ export default function Compare() {
   ];
 
   const crossTrackStudents = aClass.track !== bClass.track;
-  const studentSubjects = subjectsSharedByClassIds([a.classId, b.classId]);
+  const studentSubjects = subjectsSharedByClassIds([a.classId, b.classId], seriesId);
   const subjectCompare = studentSubjects.map((subject) => {
     const rowA = aSubjects.find((row) => row.subjectId === subject.id);
     const rowB = bSubjects.find((row) => row.subjectId === subject.id);
@@ -136,7 +136,7 @@ export default function Compare() {
   ];
 
   const crossTrackClasses = classItemA.track !== classItemB.track;
-  const classSubjectCompare = subjectsSharedByClassIds([classA, classB]).map((subject) => ({
+  const classSubjectCompare = subjectsSharedByClassIds([classA, classB], seriesId).map((subject) => ({
     name: subject.name,
     a: Number(toScale(subjectPercentForClass(classA, subject.id, seriesId), seriesId).toFixed(2)),
     b: Number(toScale(subjectPercentForClass(classB, subject.id, seriesId), seriesId).toFixed(2)),

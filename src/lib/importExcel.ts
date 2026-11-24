@@ -11,7 +11,7 @@ import {
   scores,
   seriesById,
   students,
-  subjectsForClass,
+  subjectsForClassSeries,
   type Exam,
   type Score,
   type SeriesId,
@@ -65,10 +65,14 @@ export function matchRows(rawRows: RawRow[], seriesId: SeriesId, fallbackClassId
     const values: Record<string, number | null> = {};
 
     if (classId) {
-      const allowed = new Set(subjectsForClass(classId).map((s) => s.id));
+      const allowed = new Set(subjectsForClassSeries(classId, seriesId).map((s) => s.id));
       for (const [subjectId, value] of Object.entries(raw.values)) {
         if (!allowed.has(subjectId)) {
-          issues.push(`درس «${subjectNameById(subjectId)}» برای این کلاس نیست`);
+          issues.push(
+            series.kind === 'percent'
+              ? `درس عمومی «${subjectNameById(subjectId)}» در آزمون تستی ثبت نمی‌شود`
+              : `درس «${subjectNameById(subjectId)}» برای این کلاس نیست`,
+          );
           continue;
         }
         if (series.kind === 'percent' && (value < 0 || value > 100)) {

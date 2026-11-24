@@ -9,7 +9,7 @@ import {
   studentById,
   students,
   subjectById,
-  subjectsForStudent,
+  subjectsForClassSeries,
   type ExamSeries,
   type Score,
   type SeriesId,
@@ -22,7 +22,10 @@ import {
 export function examPercentForStudent(studentId: string, examId: string): number | null {
   const exam = examById(examId);
   if (!exam) return null;
-  const rows = scores.filter((s) => s.examId === examId && s.studentId === studentId);
+  const allowed = new Set(subjectsForClassSeries(exam.classId, exam.seriesId).map((s) => s.id));
+  const rows = scores.filter(
+    (s) => s.examId === examId && s.studentId === studentId && allowed.has(s.subjectId),
+  );
   if (!rows.length) return null;
   let sum = 0;
   let weightSum = 0;
@@ -75,8 +78,9 @@ export function growthForStudent(studentId: string, seriesId: SeriesId): GrowthP
 export function seriesPercentForStudent(studentId: string, seriesId: SeriesId): number | null {
   const student = studentById(studentId);
   if (!student) return null;
+  const allowed = new Set(subjectsForClassSeries(student.classId, seriesId).map((s) => s.id));
   const rows = scores.filter((row) => {
-    if (row.studentId !== studentId) return false;
+    if (row.studentId !== studentId || !allowed.has(row.subjectId)) return false;
     const exam = examById(row.examId);
     return exam?.seriesId === seriesId && exam.classId === student.classId;
   });
@@ -161,7 +165,7 @@ export interface SubjectPercent {
 export function subjectPercents(studentId: string, seriesId: SeriesId): SubjectPercent[] {
   const student = studentById(studentId);
   if (!student) return [];
-  return subjectsForStudent(studentId).map((subject) => {
+  return subjectsForClassSeries(student.classId, seriesId).map((subject) => {
     let sum = 0;
     let weight = 0;
     let classSum = 0;

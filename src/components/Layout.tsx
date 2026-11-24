@@ -3,6 +3,7 @@ import { currentUser, classes } from '../data/mock';
 import { fa } from '../lib/fa';
 import { Icon } from './ui';
 import { dataSource } from '../lib/bootstrap';
+import { login, logout } from '../lib/auth';
 
 export const navigate = (path: string) => {
   window.location.hash = path;
@@ -110,9 +111,17 @@ export default function Layout({
             <button className="btn sm" onClick={() => navigate('/settings')} title="تنظیمات">
               <Icon name="bell" size={16} />
             </button>
-            <div className="avatar" title={currentUser.name}>
+            <button
+              className="avatar"
+              title="خروج از حساب"
+              style={{ border: 'none', cursor: 'pointer' }}
+              onClick={async () => {
+                await logout();
+                window.location.reload();
+              }}
+            >
               م
-            </div>
+            </button>
           </div>
         </header>
 
@@ -124,9 +133,21 @@ export default function Layout({
 
 /* ----------------------------- login ----------------------------- */
 
-export function Login({ onEnter }: { onEnter: () => void }) {
-  const [user, setUser] = useState('mousavi');
-  const [pass, setPass] = useState('demo1234');
+export function Login({ onSuccess }: { onSuccess: () => void }) {
+  const [user, setUser] = useState('Meftah');
+  const [pass, setPass] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    const result = await login(user, pass);
+    setBusy(false);
+    if (result.ok) onSuccess();
+    else setError(result.error ?? 'ورود ناموفق بود.');
+  };
 
   return (
     <div className="login-wrap">
@@ -164,11 +185,17 @@ export function Login({ onEnter }: { onEnter: () => void }) {
       <div className="login-form">
         <div className="login-box">
           <h1>ورود به سامانه</h1>
-          <p className="small muted">برای ورود به نسخه‌ی نمایشی نیازی به رمز واقعی نیست.</p>
+          <p className="small muted">یک حساب مدیریت مدرسه — بدون نام کاربری و رمز وارد نمی‌شوی.</p>
 
           <div className="field">
             <label>نام کاربری</label>
-            <input className="input" value={user} onChange={(e) => setUser(e.target.value)} />
+            <input
+              className="input"
+              value={user}
+              autoComplete="username"
+              onChange={(e) => setUser(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && void submit()}
+            />
           </div>
           <div className="field">
             <label>رمز عبور</label>
@@ -176,21 +203,28 @@ export function Login({ onEnter }: { onEnter: () => void }) {
               className="input"
               type="password"
               value={pass}
+              autoComplete="current-password"
               onChange={(e) => setPass(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && onEnter()}
+              onKeyDown={(e) => e.key === 'Enter' && void submit()}
             />
           </div>
 
-          <button className="btn primary block" onClick={onEnter}>
-            ورود
-          </button>
-          <button className="btn block" onClick={onEnter}>
-            ورود سریع بدون رمز
+          {error && (
+            <div className="tiny" style={{ color: '#e03131', marginBottom: 8 }}>
+              {error}
+            </div>
+          )}
+
+          <button className="btn primary block" onClick={() => void submit()} disabled={busy}>
+            {busy ? 'در حال ورود…' : 'ورود'}
           </button>
 
           <div className="demo-hint">
-            این صفحه فقط ظاهر ورود را نشان می‌دهد. در مرحله‌ی بعد، رمزها واقعی و هش‌شده خواهند بود و
-            داده‌ها در SQLite همین کامپیوتر ذخیره می‌شوند ({fa(classes.length)} کلاس نمونه).
+            رمز را می‌شود روی سرور با متغیرهای <span style={{ direction: 'ltr', display: 'inline-block' }}>
+              MEFTAH_USER
+            </span>{' '}
+            و <span style={{ direction: 'ltr', display: 'inline-block' }}>MEFTAH_PASS</span> عوض کرد؛ در حالت
+            استاتیک (بدون سرور) همان رمز پیش‌فرض بررسی می‌شود.
           </div>
         </div>
       </div>

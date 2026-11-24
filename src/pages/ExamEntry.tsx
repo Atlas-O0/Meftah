@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { classes, examById, scores, series, students, subjectsForClass } from '../data/mock';
+import { classes, examById, scores, series, students, subjectsForClassSeries } from '../data/mock';
 import { fa, faDate, faPct, faScore } from '../lib/fa';
 import { saveExamScores, type SaveScoresResult } from '../lib/scores';
 import { Badge, Card, Icon } from '../components/ui';
@@ -28,7 +28,7 @@ export default function ExamEntry({ id }: { id: string }) {
   const seriesItem = series.find((s) => s.id === exam.seriesId)!;
   const classItem = classes.find((c) => c.id === exam.classId)!;
   const list = students.filter((s) => s.classId === exam.classId);
-  const examSubjects = subjectsForClass(exam.classId);
+  const examSubjects = subjectsForClassSeries(exam.classId, exam.seriesId);
 
   const percentFor = (studentId: string) => {
     let sum = 0;

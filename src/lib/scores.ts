@@ -3,7 +3,7 @@
  * همان قاعده‌ی اکسل: کلید (دانش‌آموز + آزمون + درس) و به‌روزرسانی جای تکرار.
  */
 
-import { exams, scores, subjectsForClass, type Score } from '../data/mock';
+import { exams, scores, subjectsForClassSeries, type Score } from '../data/mock';
 import { parseNumber } from './excel';
 import { appendSavedImports } from './persist';
 
@@ -19,7 +19,7 @@ export function saveExamScores(examId: string, entries: Record<string, string>):
   const result: SaveScoresResult = { written: 0, empty: 0, invalid: 0, values: {} };
   if (!exam) return result;
 
-  const allowed = new Set(subjectsForClass(exam.classId).map((subject) => subject.id));
+  const allowed = new Set(subjectsForClassSeries(exam.classId, exam.seriesId).map((subject) => subject.id));
   const saved: Score[] = [];
 
   for (const [key, raw] of Object.entries(entries)) {

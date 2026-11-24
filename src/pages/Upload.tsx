@@ -6,7 +6,7 @@ import {
   series,
   students,
   subjects,
-  subjectsForClass,
+  subjectsForClassSeries,
   type SeriesId,
 } from '../data/mock';
 import { fa, faDate } from '../lib/fa';
@@ -91,7 +91,7 @@ export default function Upload() {
   };
 
   const downloadTemplate = () => {
-    const subs = subjectsForClass(classId);
+    const subs = subjectsForClassSeries(classId, seriesId);
     const head = ['کد دانش‌آموزی', 'نام و نام خانوادگی', 'کلاس', ...subs.map((subject) => subject.name)];
     const rows = students
       .filter((student) => student.classId === classId)

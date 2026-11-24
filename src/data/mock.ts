@@ -69,6 +69,8 @@ export interface Subject {
   weight: number;
   difficulty: number;
   track: SubjectTrack;
+  /** درس عمومی (فارسی، عربی، دینی…) — آزمون‌های تستی این‌ها را ندارند */
+  general?: boolean;
 }
 
 export interface Student {
@@ -270,14 +272,14 @@ export const classes: ClassRoom[] = [
  */
 export const subjects: Subject[] = [
   // دروس مشترک
-  { id: 'literature', name: 'فارسی ۳', weight: 4, difficulty: 0.97, track: 'common' },
-  { id: 'writing', name: 'نگارش ۳', weight: 2, difficulty: 1.0, track: 'common' },
-  { id: 'arabic', name: 'عربی، زبان قرآن ۳', weight: 2, difficulty: 0.94, track: 'common' },
-  { id: 'religion', name: 'دین و زندگی ۳', weight: 2, difficulty: 1.02, track: 'common' },
-  { id: 'english', name: 'زبان خارجی ۳', weight: 2, difficulty: 0.95, track: 'common' },
-  { id: 'health', name: 'سلامت و بهداشت', weight: 2, difficulty: 1.05, track: 'common' },
-  { id: 'identity', name: 'هویت اجتماعی', weight: 2, difficulty: 1.0, track: 'common' },
-  { id: 'family', name: 'مدیریت خانواده و سبک زندگی', weight: 2, difficulty: 1.04, track: 'common' },
+  { id: 'literature', name: 'فارسی ۳', weight: 4, difficulty: 0.97, track: 'common', general: true },
+  { id: 'writing', name: 'نگارش ۳', weight: 2, difficulty: 1.0, track: 'common', general: true },
+  { id: 'arabic', name: 'عربی، زبان قرآن ۳', weight: 2, difficulty: 0.94, track: 'common', general: true },
+  { id: 'religion', name: 'دین و زندگی ۳', weight: 2, difficulty: 1.02, track: 'common', general: true },
+  { id: 'english', name: 'زبان خارجی ۳', weight: 2, difficulty: 0.95, track: 'common', general: true },
+  { id: 'health', name: 'سلامت و بهداشت', weight: 2, difficulty: 1.05, track: 'common', general: true },
+  { id: 'identity', name: 'هویت اجتماعی', weight: 2, difficulty: 1.0, track: 'common', general: true },
+  { id: 'family', name: 'مدیریت خانواده و سبک زندگی', weight: 2, difficulty: 1.04, track: 'common', general: true },
   // دروس ویژه‌ی ریاضی فیزیک
   { id: 'calculus', name: 'حسابان ۲', weight: 4, difficulty: 0.87, track: 'math' },
   { id: 'geometry', name: 'هندسه ۳', weight: 3, difficulty: 0.9, track: 'math' },
@@ -311,9 +313,21 @@ export function subjectsForStudent(studentId: string): Subject[] {
   return student ? subjectsForClass(student.classId) : subjects;
 }
 
+/**
+ * دروس یک کلاس در یک سری.
+ * آزمون‌های تستی (قلمچی، ماز، مشاوره) درس عمومی ندارند؛ فقط اختصاصی‌های رشته.
+ */
+export function subjectsForClassSeries(classId: string, seriesId: SeriesId): Subject[] {
+  const list = subjectsForClass(classId);
+  const item = series.find((s) => s.id === seriesId);
+  return item && item.kind === 'percent' ? list.filter((subject) => !subject.general) : list;
+}
+
 /** دروس مشترک چند کلاس — برای مقایسه‌ی بین رشته‌ای */
-export function subjectsSharedByClassIds(classIds: string[]): Subject[] {
-  const sets = classIds.map((id) => new Set(subjectsForClass(id).map((s) => s.id)));
+export function subjectsSharedByClassIds(classIds: string[], seriesId?: SeriesId): Subject[] {
+  const sets = classIds.map(
+    (id) => new Set((seriesId ? subjectsForClassSeries(id, seriesId) : subjectsForClass(id)).map((s) => s.id)),
+  );
   return subjects.filter((s) => sets.every((set) => set.has(s.id)));
 }
 
