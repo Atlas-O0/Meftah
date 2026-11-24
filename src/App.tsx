@@ -56,7 +56,7 @@ export default function App() {
   } else if (parts[0] === 'upload') {
     page = <Upload />;
     title = 'آپلود کارنامه';
-    subtitle = 'PDF یا عکس → بازبینی → ثبت';
+    subtitle = 'اکسل → بازبینی → ساخت پروفایل و ثبت نمره';
   } else if (parts[0] === 'compare') {
     page = <Compare />;
     title = 'مقایسه';

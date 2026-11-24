@@ -4,6 +4,8 @@
  * ساختار عیناً همان چیزی است که بعداً به جدول‌های SQLite وصل می‌شود.
  */
 
+import { loadSavedImports } from '../lib/persist';
+
 export type SeriesId =
   | 'ghalamchi'
   | 'capsule'
@@ -456,3 +458,30 @@ export const classById = (id: string) => classes.find((c) => c.id === id)!;
 export const studentById = (id: string) => students.find((s) => s.id === id);
 export const examById = (id: string) => exams.find((e) => e.id === id);
 export const seriesById = (id: SeriesId) => series.find((s) => s.id === id)!;
+
+/* داده‌های واردشده از اکسل (در همین مرورگر ذخیره می‌شوند) */
+const savedImports = loadSavedImports();
+if (savedImports) {
+  const knownStudents = new Set(students.map((student) => student.id));
+  for (const student of savedImports.students) {
+    if (!knownStudents.has(student.id)) {
+      students.push(student);
+      knownStudents.add(student.id);
+    }
+  }
+  const knownExams = new Set(exams.map((exam) => exam.id));
+  for (const exam of savedImports.exams) {
+    if (!knownExams.has(exam.id)) {
+      exams.push(exam);
+      knownExams.add(exam.id);
+    }
+  }
+  for (const saved of savedImports.scores) {
+    const existing = scores.find(
+      (score) =>
+        score.studentId === saved.studentId && score.examId === saved.examId && score.subjectId === saved.subjectId,
+    );
+    if (existing) existing.value = saved.value;
+    else scores.push(saved);
+  }
+}
