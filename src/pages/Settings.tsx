@@ -1,12 +1,20 @@
 import { useState } from 'react';
-import { classes, series, students, subjects, type SeriesId } from '../data/mock';
+import {
+  classes,
+  series,
+  students,
+  subjectTrackLabels,
+  subjects,
+  trackLabels,
+  type SeriesId,
+} from '../data/mock';
 import { fa, faPct, faScore } from '../lib/fa';
 import { Badge, Card, Icon, Progress } from '../components/ui';
 
 const teachers = [
-  { name: 'خانم موسوی', role: 'مدیر و دبیر ریاضی', classes: '۱۲۱ · ۱۲۲' },
-  { name: 'آقای رستمی', role: 'دبیر علوم', classes: '۱۲۳ · ۱۲۴' },
-  { name: 'خانم کاظمی', role: 'دبیر ادبیات', classes: '۱۲۵ · ۱۲۶' },
+  { name: 'خانم موسوی', role: 'مدیر و دبیر حسابان', classes: '۱۲۱ · ۱۲۲ — ریاضی فیزیک' },
+  { name: 'آقای رستمی', role: 'دبیر فیزیک', classes: '۱۲۳ ریاضی فیزیک · ۱۲۴ تجربی' },
+  { name: 'خانم کاظمی', role: 'دبیر زیست‌شناسی', classes: '۱۲۵ · ۱۲۶ — تجربی' },
 ];
 
 export default function Settings() {
@@ -35,7 +43,7 @@ export default function Settings() {
               <div style={{ flex: 1 }}>
                 <div className="bold small">{c.name}</div>
                 <div className="tiny muted">
-                  پایه {c.grade} · دبیر {c.teacher} ·{' '}
+                  پایه {c.grade} · {trackLabels[c.track]} · دبیر {c.teacher} ·{' '}
                   {fa(students.filter((s) => s.classId === c.id).length)} دانش‌آموز
                 </div>
               </div>
@@ -78,6 +86,7 @@ export default function Settings() {
             <thead>
               <tr>
                 <th>درس</th>
+                <th>رشته</th>
                 <th>ضریب</th>
                 <th style={{ width: 200 }}>وزن در میانگین</th>
                 <th>وضعیت</th>
@@ -87,6 +96,9 @@ export default function Settings() {
               {subjects.map((s) => (
                 <tr key={s.id}>
                   <td className="small bold">{s.name}</td>
+                  <td>
+                    <Badge line>{subjectTrackLabels[s.track]}</Badge>
+                  </td>
                   <td className="num small">{fa(s.weight)}</td>
                   <td>
                     <Progress value={(s.weight / 4) * 100} color="#4c6ef5" />

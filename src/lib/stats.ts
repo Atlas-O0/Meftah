@@ -9,7 +9,7 @@ import {
   studentById,
   students,
   subjectById,
-  subjects,
+  subjectsForStudent,
   type ExamSeries,
   type Score,
   type SeriesId,
@@ -161,7 +161,7 @@ export interface SubjectPercent {
 export function subjectPercents(studentId: string, seriesId: SeriesId): SubjectPercent[] {
   const student = studentById(studentId);
   if (!student) return [];
-  return subjects.map((subject) => {
+  return subjectsForStudent(studentId).map((subject) => {
     let sum = 0;
     let weight = 0;
     let classSum = 0;

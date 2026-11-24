@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { classes, examById, scores, series, students, subjects } from '../data/mock';
+import { classes, examById, scores, series, students, subjectsForClass } from '../data/mock';
 import { fa, faDate, faPct, faScore } from '../lib/fa';
 import { Badge, Card, Icon } from '../components/ui';
 
@@ -27,11 +27,12 @@ export default function ExamEntry({ id }: { id: string }) {
   const seriesItem = series.find((s) => s.id === exam.seriesId)!;
   const classItem = classes.find((c) => c.id === exam.classId)!;
   const list = students.filter((s) => s.classId === exam.classId);
+  const examSubjects = subjectsForClass(exam.classId);
 
   const percentFor = (studentId: string) => {
     let sum = 0;
     let weightSum = 0;
-    for (const subject of subjects) {
+    for (const subject of examSubjects) {
       const raw = Number(values[`${studentId}:${subject.id}`]);
       if (Number.isNaN(raw)) continue;
       sum += raw * subject.weight;
@@ -88,7 +89,7 @@ export default function ExamEntry({ id }: { id: string }) {
             <thead>
               <tr>
                 <th style={{ position: 'sticky', right: 0, background: '#fbfcfe', zIndex: 2 }}>دانش‌آموز</th>
-                {subjects.map((subject) => (
+                {examSubjects.map((subject) => (
                   <th key={subject.id} style={{ minWidth: 74, textAlign: 'center' }}>
                     {subject.name}
                     <div className="tiny muted" style={{ fontWeight: 400 }}>
@@ -116,7 +117,7 @@ export default function ExamEntry({ id }: { id: string }) {
                     >
                       {student.name}
                     </td>
-                    {subjects.map((subject) => {
+                    {examSubjects.map((subject) => {
                       const key = `${student.id}:${subject.id}`;
                       const numeric = Number(values[key]);
                       return (

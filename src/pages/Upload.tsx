@@ -6,7 +6,7 @@ import {
   scores,
   series,
   students,
-  subjects,
+  subjectsForClass,
   type SeriesId,
 } from '../data/mock';
 import { fa, faDate, faPct, faScore } from '../lib/fa';
@@ -32,6 +32,7 @@ export default function Upload() {
 
   const seriesItem = series.find((s) => s.id === seriesId)!;
   const classItem = classes.find((c) => c.id === classId)!;
+  const classSubjects = subjectsForClass(classId);
   const sourceExam = useMemo(() => {
     const list = exams.filter((e) => e.seriesId === seriesId && e.classId === classId);
     return list[list.length - 1];
@@ -41,7 +42,7 @@ export default function Upload() {
     const list = students.filter((s) => s.classId === classId);
     const draft: DraftRow[] = list.map((student, index) => {
       const values: Record<string, string> = {};
-      for (const subject of subjects) {
+      for (const subject of classSubjects) {
         const found = scores.find(
           (s) => s.studentId === student.id && s.examId === sourceExam?.id && s.subjectId === subject.id,
         );
@@ -249,7 +250,7 @@ export default function Upload() {
                   <tr>
                     <th style={{ position: 'sticky', right: 0, background: '#fbfcfe', zIndex: 2 }}>دانش‌آموز</th>
                     <th>وضعیت</th>
-                    {subjects.map((subject) => (
+                    {classSubjects.map((subject) => (
                       <th key={subject.id} style={{ minWidth: 66, textAlign: 'center' }}>
                         {subject.name}
                       </th>
@@ -280,7 +281,7 @@ export default function Upload() {
                       <td>
                         <Badge tone={statusTone[row.status]}>{row.status === 'ok' ? 'سالم' : 'بررسی'}</Badge>
                       </td>
-                      {subjects.map((subject) => (
+                      {classSubjects.map((subject) => (
                         <td key={subject.id} style={{ padding: '5px 5px' }}>
                           <input
                             className="input num"

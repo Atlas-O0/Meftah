@@ -10,7 +10,15 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { classes, orderedSeries, series, students, subjects, type SeriesId } from '../data/mock';
+import {
+  classes,
+  orderedSeries,
+  series,
+  students,
+  subjectsSharedByClassIds,
+  trackLabels,
+  type SeriesId,
+} from '../data/mock';
 import { fa, faPct, faScore } from '../lib/fa';
 import {
   scaleOf,
@@ -52,7 +60,7 @@ function ValueTip({ active, payload, label, format }: any) {
 const studentOption = (id: string) => {
   const student = students.find((s) => s.id === id)!;
   const cls = classes.find((c) => c.id === student.classId)!;
-  return `${student.name} — ${cls.name}`;
+  return `${student.name} — ${cls.name} (${trackLabels[cls.track]})`;
 };
 
 export default function Compare() {
@@ -76,6 +84,7 @@ export default function Compare() {
   const a = students.find((s) => s.id === studentA) ?? students[0];
   const b = students.find((s) => s.id === studentB) ?? students[1];
   const aClass = classes.find((c) => c.id === a.classId)!;
+  const bClass = classes.find((c) => c.id === b.classId)!;
   const aValue = seriesValueForStudent(a.id, seriesId);
   const bValue = seriesValueForStudent(b.id, seriesId);
   const aClassValue = seriesValueForClass(a.classId, seriesId);
@@ -89,7 +98,9 @@ export default function Compare() {
     { name: 'میانگین مدرسه', value: Number(schoolValue.toFixed(2)), fill: '#cbd5e1' },
   ];
 
-  const subjectCompare = subjects.map((subject) => {
+  const crossTrackStudents = aClass.track !== bClass.track;
+  const studentSubjects = subjectsSharedByClassIds([a.classId, b.classId]);
+  const subjectCompare = studentSubjects.map((subject) => {
     const rowA = aSubjects.find((row) => row.subjectId === subject.id);
     const rowB = bSubjects.find((row) => row.subjectId === subject.id);
     return {
@@ -112,7 +123,8 @@ export default function Compare() {
     { name: 'میانگین مدرسه', value: Number(schoolValue.toFixed(2)), fill: '#cbd5e1' },
   ];
 
-  const classSubjectCompare = subjects.map((subject) => ({
+  const crossTrackClasses = classItemA.track !== classItemB.track;
+  const classSubjectCompare = subjectsSharedByClassIds([classA, classB]).map((subject) => ({
     name: subject.name,
     a: Number(toScale(subjectPercentForClass(classA, subject.id, seriesId), seriesId).toFixed(2)),
     b: Number(toScale(subjectPercentForClass(classB, subject.id, seriesId), seriesId).toFixed(2)),
@@ -160,7 +172,9 @@ export default function Compare() {
       {/* ۱) دانش‌آموز با دانش‌آموز */}
       <Card
         title="دانش‌آموز با دانش‌آموز"
-        subtitle={`دو نفر را انتخاب کن — ${seriesItem.name}`}
+        subtitle={`دو نفر را انتخاب کن — ${seriesItem.name}${
+          crossTrackStudents ? ' · دو رشته‌ی مختلف: فقط دروس مشترک' : ''
+        }`}
         flush
       >
         <div className="row" style={{ gap: 10, padding: '0 18px 14px', flexWrap: 'wrap' }}>
@@ -283,7 +297,9 @@ export default function Compare() {
       {/* ۲) کلاس به کلاس */}
       <Card
         title="کلاس به کلاس"
-        subtitle={`دو کلاس را انتخاب کن — ${seriesItem.name}`}
+        subtitle={`دو کلاس را انتخاب کن — ${seriesItem.name}${
+          crossTrackClasses ? ' · دو رشته‌ی مختلف: فقط دروس مشترک' : ''
+        }`}
         flush
       >
         <div className="row" style={{ gap: 10, padding: '0 18px 14px', flexWrap: 'wrap' }}>
@@ -296,7 +312,7 @@ export default function Compare() {
           >
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
-                کلاس {c.name}
+                کلاس {c.name} · {trackLabels[c.track]}
               </option>
             ))}
           </select>
@@ -310,7 +326,7 @@ export default function Compare() {
           >
             {classes.map((c) => (
               <option key={c.id} value={c.id}>
-                کلاس {c.name}
+                کلاس {c.name} · {trackLabels[c.track]}
               </option>
             ))}
           </select>

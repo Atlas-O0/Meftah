@@ -31,10 +31,27 @@ export interface ExamSeries {
   thresholds: { strong: number; good: number; pass: number };
 }
 
+/** رشته‌های پایه دوازدهم */
+export type TrackId = 'math' | 'science';
+
+export const trackLabels: Record<TrackId, string> = {
+  math: 'ریاضی فیزیک',
+  science: 'علوم تجربی',
+};
+
+export type SubjectTrack = 'common' | TrackId;
+
+export const subjectTrackLabels: Record<SubjectTrack, string> = {
+  common: 'مشترک',
+  math: 'ویژه ریاضی فیزیک',
+  science: 'ویژه تجربی',
+};
+
 export interface ClassRoom {
   id: string;
   name: string;
   grade: string;
+  track: TrackId;
   teacher: string;
 }
 
@@ -43,6 +60,7 @@ export interface Subject {
   name: string;
   weight: number;
   difficulty: number;
+  track: SubjectTrack;
 }
 
 export interface Student {
@@ -117,7 +135,7 @@ export const series: ExamSeries[] = [
     kind: 'percent',
     optional: false,
     hasTemplate: true,
-    templateNote: 'درصدی — ۱۲ ستون درس',
+    templateNote: 'درصدی — یک ستون برای هر درس رشته',
     thresholds: { ...t },
   },
   {
@@ -228,30 +246,68 @@ export const orderedSeries: ExamSeries[] = seriesGroups.flatMap((group) =>
 );
 
 export const classes: ClassRoom[] = [
-  // پایه دوازدهم — ۱۲۱ تا ۱۲۶
-  { id: 'c121', name: '۱۲۱', grade: 'دوازدهم', teacher: 'خانم موسوی' },
-  { id: 'c122', name: '۱۲۲', grade: 'دوازدهم', teacher: 'خانم موسوی' },
-  { id: 'c123', name: '۱۲۳', grade: 'دوازدهم', teacher: 'آقای رستمی' },
-  { id: 'c124', name: '۱۲۴', grade: 'دوازدهم', teacher: 'آقای رستمی' },
-  { id: 'c125', name: '۱۲۵', grade: 'دوازدهم', teacher: 'خانم کاظمی' },
-  { id: 'c126', name: '۱۲۶', grade: 'دوازدهم', teacher: 'خانم کاظمی' },
+  // پایه دوازدهم — ۱۲۱ تا ۱۲۳ ریاضی فیزیک
+  { id: 'c121', name: '۱۲۱', grade: 'دوازدهم', track: 'math', teacher: 'خانم موسوی' },
+  { id: 'c122', name: '۱۲۲', grade: 'دوازدهم', track: 'math', teacher: 'خانم موسوی' },
+  { id: 'c123', name: '۱۲۳', grade: 'دوازدهم', track: 'math', teacher: 'آقای رستمی' },
+  // پایه دوازدهم — ۱۲۴ تا ۱۲۶ علوم تجربی
+  { id: 'c124', name: '۱۲۴', grade: 'دوازدهم', track: 'science', teacher: 'آقای رستمی' },
+  { id: 'c125', name: '۱۲۵', grade: 'دوازدهم', track: 'science', teacher: 'خانم کاظمی' },
+  { id: 'c126', name: '۱۲۶', grade: 'دوازدهم', track: 'science', teacher: 'خانم کاظمی' },
 ];
 
-/** درس‌های پایه دوازدهم — رشته‌ی علوم تجربی */
+/**
+ * درس‌های پایه دوازدهم — مشترک، ویژه‌ی ریاضی فیزیک و ویژه‌ی تجربی.
+ * هر درس با کلید یکتا ذخیره می‌شود؛ دروس مشترک برای هر دو رشته‌اند.
+ */
 export const subjects: Subject[] = [
-  { id: 'literature', name: 'فارسی ۳', weight: 4, difficulty: 0.97 },
-  { id: 'writing', name: 'نگارش ۳', weight: 2, difficulty: 1.0 },
-  { id: 'arabic', name: 'عربی، زبان قرآن ۳', weight: 2, difficulty: 0.94 },
-  { id: 'religion', name: 'دین و زندگی ۳', weight: 2, difficulty: 1.02 },
-  { id: 'english', name: 'زبان خارجی ۳', weight: 2, difficulty: 0.95 },
-  { id: 'math', name: 'ریاضی ۳', weight: 4, difficulty: 0.88 },
-  { id: 'physics', name: 'فیزیک ۳', weight: 4, difficulty: 0.86 },
-  { id: 'chemistry', name: 'شیمی ۳', weight: 4, difficulty: 0.9 },
-  { id: 'biology', name: 'زیست‌شناسی ۳', weight: 4, difficulty: 0.93 },
-  { id: 'health', name: 'سلامت و بهداشت', weight: 2, difficulty: 1.05 },
-  { id: 'identity', name: 'هویت اجتماعی', weight: 2, difficulty: 1.0 },
-  { id: 'family', name: 'مدیریت خانواده و سبک زندگی', weight: 2, difficulty: 1.04 },
+  // دروس مشترک
+  { id: 'literature', name: 'فارسی ۳', weight: 4, difficulty: 0.97, track: 'common' },
+  { id: 'writing', name: 'نگارش ۳', weight: 2, difficulty: 1.0, track: 'common' },
+  { id: 'arabic', name: 'عربی، زبان قرآن ۳', weight: 2, difficulty: 0.94, track: 'common' },
+  { id: 'religion', name: 'دین و زندگی ۳', weight: 2, difficulty: 1.02, track: 'common' },
+  { id: 'english', name: 'زبان خارجی ۳', weight: 2, difficulty: 0.95, track: 'common' },
+  { id: 'health', name: 'سلامت و بهداشت', weight: 2, difficulty: 1.05, track: 'common' },
+  { id: 'identity', name: 'هویت اجتماعی', weight: 2, difficulty: 1.0, track: 'common' },
+  { id: 'family', name: 'مدیریت خانواده و سبک زندگی', weight: 2, difficulty: 1.04, track: 'common' },
+  // دروس ویژه‌ی ریاضی فیزیک
+  { id: 'calculus', name: 'حسابان ۲', weight: 4, difficulty: 0.87, track: 'math' },
+  { id: 'geometry', name: 'هندسه ۳', weight: 3, difficulty: 0.9, track: 'math' },
+  { id: 'discrete', name: 'ریاضیات گسسته', weight: 3, difficulty: 0.92, track: 'math' },
+  // دروس ویژه‌ی علوم تجربی
+  { id: 'math', name: 'ریاضی ۳', weight: 4, difficulty: 0.88, track: 'science' },
+  { id: 'biology', name: 'زیست‌شناسی ۳', weight: 4, difficulty: 0.93, track: 'science' },
+  // فیزیک و شیمی در هر دو رشته تدریس می‌شوند، با یک کلید مشترک
+  { id: 'physics', name: 'فیزیک ۳', weight: 4, difficulty: 0.86, track: 'common' },
+  { id: 'chemistry', name: 'شیمی ۳', weight: 4, difficulty: 0.9, track: 'common' },
 ];
+
+function trackSubjects(track: TrackId): Subject[] {
+  return subjects.filter((s) => s.track === 'common' || s.track === track);
+}
+
+/** دروس یک رشته (مشترک + اختصاصی همان رشته) */
+export function subjectsForTrack(track: TrackId): Subject[] {
+  return trackSubjects(track);
+}
+
+/** دروس یک کلاس بر اساس رشته‌ی آن */
+export function subjectsForClass(classId: string): Subject[] {
+  const cls = classes.find((c) => c.id === classId);
+  return cls ? trackSubjects(cls.track) : subjects;
+}
+
+/** دروس یک دانش‌آموز بر اساس کلاسش */
+export function subjectsForStudent(studentId: string): Subject[] {
+  const student = students.find((s) => s.id === studentId);
+  return student ? subjectsForClass(student.classId) : subjects;
+}
+
+/** دروس مشترک چند کلاس — برای مقایسه‌ی بین رشته‌ای */
+export function subjectsSharedByClassIds(classIds: string[]): Subject[] {
+  const sets = classIds.map((id) => new Set(subjectsForClass(id).map((s) => s.id)));
+  return subjects.filter((s) => sets.every((set) => set.has(s.id)));
+}
 
 const rawStudents: Array<[string, string, number, number]> = [
   // نام، کلاس، توانایی پایه، روند پیشرفت در هر آزمون
@@ -341,7 +397,7 @@ for (const s of series) {
       for (const student of students.filter((st) => st.classId === cls.id)) {
         // ماز اختیاری است؛ بعضی دانش‌آموزها نمره‌ی آن را ندارند
         if (s.optional && !student.maz) continue;
-        for (const subject of subjects) {
+        for (const subject of subjectsForClass(cls.id)) {
           const base =
             student.ability *
             subject.difficulty *

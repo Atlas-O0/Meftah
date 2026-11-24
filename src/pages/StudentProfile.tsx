@@ -22,7 +22,7 @@ import {
   series,
   seriesGroups,
   studentById,
-  subjects,
+  subjectsForStudent,
   type RecordCategory,
   type RecordKind,
   type SeriesId,
@@ -441,7 +441,7 @@ export default function StudentProfile({ id }: { id: string }) {
                     </Badge>
                   </div>
                   <div className="body">
-                    {subjects.map((subject) => {
+                    {subjectsForStudent(student.id).map((subject) => {
                       const score = scores.find(
                         (s) => s.studentId === student.id && s.examId === exam.id && s.subjectId === subject.id,
                       );
