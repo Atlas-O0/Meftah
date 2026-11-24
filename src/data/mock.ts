@@ -237,19 +237,20 @@ export const classes: ClassRoom[] = [
   { id: 'c126', name: '۱۲۶', grade: 'دوازدهم', teacher: 'خانم کاظمی' },
 ];
 
+/** درس‌های پایه دوازدهم — رشته‌ی علوم تجربی */
 export const subjects: Subject[] = [
-  { id: 'math', name: 'ریاضی', weight: 4, difficulty: 0.89 },
-  { id: 'science', name: 'علوم تجربی', weight: 3, difficulty: 0.93 },
-  { id: 'literature', name: 'ادبیات فارسی', weight: 4, difficulty: 1.0 },
-  { id: 'arabic', name: 'عربی', weight: 2, difficulty: 0.87 },
-  { id: 'english', name: 'زبان انگلیسی', weight: 3, difficulty: 0.92 },
-  { id: 'social', name: 'مطالعات اجتماعی', weight: 2, difficulty: 1.02 },
-  { id: 'religion', name: 'قرآن و دینی', weight: 2, difficulty: 1.06 },
-  { id: 'physics', name: 'فیزیک', weight: 2, difficulty: 0.86 },
-  { id: 'chemistry', name: 'شیمی', weight: 2, difficulty: 0.9 },
-  { id: 'biology', name: 'زیست‌شناسی', weight: 2, difficulty: 0.95 },
-  { id: 'defense', name: 'آمادگی دفاعی', weight: 1, difficulty: 1.1 },
-  { id: 'thinking', name: 'تفکر و سبک زندگی', weight: 1, difficulty: 1.07 },
+  { id: 'literature', name: 'فارسی ۳', weight: 4, difficulty: 0.97 },
+  { id: 'writing', name: 'نگارش ۳', weight: 2, difficulty: 1.0 },
+  { id: 'arabic', name: 'عربی، زبان قرآن ۳', weight: 2, difficulty: 0.94 },
+  { id: 'religion', name: 'دین و زندگی ۳', weight: 2, difficulty: 1.02 },
+  { id: 'english', name: 'زبان خارجی ۳', weight: 2, difficulty: 0.95 },
+  { id: 'math', name: 'ریاضی ۳', weight: 4, difficulty: 0.88 },
+  { id: 'physics', name: 'فیزیک ۳', weight: 4, difficulty: 0.86 },
+  { id: 'chemistry', name: 'شیمی ۳', weight: 4, difficulty: 0.9 },
+  { id: 'biology', name: 'زیست‌شناسی ۳', weight: 4, difficulty: 0.93 },
+  { id: 'health', name: 'سلامت و بهداشت', weight: 2, difficulty: 1.05 },
+  { id: 'identity', name: 'هویت اجتماعی', weight: 2, difficulty: 1.0 },
+  { id: 'family', name: 'مدیریت خانواده و سبک زندگی', weight: 2, difficulty: 1.04 },
 ];
 
 const rawStudents: Array<[string, string, number, number]> = [
