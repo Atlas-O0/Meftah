@@ -47,7 +47,7 @@ export default function App() {
     if (parts[1]) {
       page = <ExamEntry id={parts[1]} />;
       title = 'ورود نمره‌ی آزمون';
-      subtitle = 'جدول نمره‌ها — نسخه‌ی نمایشی';
+      subtitle = 'ثبت و ویرایش نمره‌ی دستی در همین آزمون';
     } else {
       page = <Exams />;
       title = 'آزمون‌ها';

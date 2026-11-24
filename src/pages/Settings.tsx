@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   classes,
   series,
@@ -10,6 +10,8 @@ import {
 } from '../data/mock';
 import { fa, faPct, faScore } from '../lib/fa';
 import { getDataMode, setDataMode } from '../lib/mode';
+import { backupUrl, fetchHealth, isServerOnline, type ServerHealth } from '../lib/api';
+import { dataSource } from '../lib/bootstrap';
 import { Badge, Card, Icon, Progress } from '../components/ui';
 
 const teachers = [
@@ -35,48 +37,82 @@ export default function Settings() {
   };
 
   const mode = getDataMode();
+  const online = isServerOnline() || dataSource.online;
+  const [health, setHealth] = useState<ServerHealth | null>(null);
+
+  useEffect(() => {
+    if (!online) return;
+    let alive = true;
+    void fetchHealth().then((data) => {
+      if (alive) setHealth(data);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [online]);
 
   return (
     <div className="stack">
       <Card
         title="داده‌ی نمونه و شروع واقعی"
-        subtitle="داده‌ی نمونه (کلاس‌ها و نمره‌های ساختگی) فقط برای دیدن ظاهر است؛ قبل از شروع سال تحصیلی حذفش کن"
-        action={<Badge tone={mode === 'demo' ? 'amber' : 'green'}>{mode === 'demo' ? 'داده‌ی نمونه فعال' : 'فقط داده‌ی واقعی'}</Badge>}
+        subtitle={
+          online
+            ? 'سرور متصل است؛ همه‌ی صفحه‌ها فقط داده‌ی دیتابیس را نشان می‌دهند و داده‌ی نمونه نمایش داده نمی‌شود'
+            : 'داده‌ی نمونه (کلاس‌ها و نمره‌های ساختگی) فقط برای دیدن ظاهر است؛ قبل از شروع سال تحصیلی حذفش کن'
+        }
+        action={
+          <Badge tone={online ? 'green' : mode === 'demo' ? 'amber' : 'green'}>
+            {online ? 'داده از دیتابیس' : mode === 'demo' ? 'داده‌ی نمونه فعال' : 'فقط داده‌ی واقعی'}
+          </Badge>
+        }
       >
         <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
           <div className="small" style={{ flex: 1, minWidth: 240, lineHeight: 1.9 }}>
-            در حالت واقعی، ۱۸ دانش‌آموز نمونه و همه‌ی نمره‌های ساختگی از تمام صفحه‌ها حذف می‌شوند.
-            کلاس‌ها و درس‌ها (ساختار مدرسه) می‌مانند و آپلودهای واقعی هم دست نمی‌خورند. الآن{' '}
-            {fa(students.length)} دانش‌آموز نمایش داده می‌شود.
+            {online ? (
+              <>
+                دیتابیس فعال است، پس داده‌ی نمونه به‌طور خودکار کنار گذاشته می‌شود و هر چه می‌بینی از{' '}
+                <span style={{ direction: 'ltr', display: 'inline-block' }}>data/meftah.db</span> می‌آید. الآن{' '}
+                {fa(students.length)} دانش‌آموز در دیتابیس ثبت شده است. اگر می‌خواهی ظاهر سایت را با داده‌ی نمونه
+                ببینی، سایت را بدون سرور (مثلاً همان نسخه‌ی Render) باز کن.
+              </>
+            ) : (
+              <>
+                در حالت واقعی، ۱۸ دانش‌آموز نمونه و همه‌ی نمره‌های ساختگی از تمام صفحه‌ها حذف می‌شوند.
+                کلاس‌ها و درس‌ها (ساختار مدرسه) می‌مانند و آپلودهای واقعی هم دست نمی‌خورند. الآن{' '}
+                {fa(students.length)} دانش‌آموز نمایش داده می‌شود.
+              </>
+            )}
           </div>
-          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <button
-              className="btn primary"
-              disabled={mode === 'real'}
-              onClick={() => {
-                if (
-                  window.confirm(
-                    'داده‌ی نمونه حذف شود؟ کلاس‌ها و درس‌ها می‌مانند؛ دانش‌آموزان و نمره‌های ساختگی از نمایش حذف می‌شوند. آپلودهای واقعی حفظ می‌شوند.',
-                  )
-                ) {
-                  setDataMode('real');
+          {!online && (
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <button
+                className="btn primary"
+                disabled={mode === 'real'}
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      'داده‌ی نمونه حذف شود؟ کلاس‌ها و درس‌ها می‌مانند؛ دانش‌آموزان و نمره‌های ساختگی از نمایش حذف می‌شوند. آپلودهای واقعی حفظ می‌شوند.',
+                    )
+                  ) {
+                    setDataMode('real');
+                    window.location.reload();
+                  }
+                }}
+              >
+                حذف داده‌ی نمونه و شروع واقعی
+              </button>
+              <button
+                className="btn"
+                disabled={mode === 'demo'}
+                onClick={() => {
+                  setDataMode('demo');
                   window.location.reload();
-                }
-              }}
-            >
-              حذف داده‌ی نمونه و شروع واقعی
-            </button>
-            <button
-              className="btn"
-              disabled={mode === 'demo'}
-              onClick={() => {
-                setDataMode('demo');
-                window.location.reload();
-              }}
-            >
-              بازگرداندن داده‌ی نمونه
-            </button>
-          </div>
+                }}
+              >
+                بازگرداندن داده‌ی نمونه
+              </button>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -234,30 +270,63 @@ export default function Settings() {
         })}
       </div>
 
-      <Card title="پشتیبان‌گیری و شبکه" subtitle="در نسخه‌ی نهایی، همین‌جا آدرس شبکه و بکاپ قرار می‌گیرد">
-        <div className="grid cols-3">
-          <div className="stack" style={{ gap: 4 }}>
-            <div className="bold small">آدرس شبکه</div>
-            <div className="tiny muted" style={{ direction: 'ltr', textAlign: 'right' }}>
-              http://192.168.1.50:3000
+      <Card
+        title="دیتابیس و پشتیبان‌گیری"
+        subtitle={
+          online
+            ? 'داده‌ی واقعی در یک فایل SQLite ذخیره می‌شود — فایل را کپی کنی، همه‌چیز با خودش می‌آید'
+            : 'سرور بالا نیست؛ داده‌ها فقط در همین مرورگر ذخیره می‌شوند'
+        }
+        action={<Badge tone={online ? 'green' : 'amber'}>{online ? 'دیتابیس متصل' : 'حالت مرورگر'}</Badge>}
+      >
+        {online ? (
+          <div className="grid cols-3">
+            <div className="stack" style={{ gap: 4 }}>
+              <div className="bold small">داده‌ی ذخیره‌شده</div>
+              <div className="tiny muted">
+                {fa(health?.counts.students ?? students.length)} دانش‌آموز ·{' '}
+                {fa(health?.counts.scores ?? 0)} نمره · {fa(health?.counts.records ?? 0)} گزارش
+              </div>
+              <Badge line>{fa(health?.counts.exams ?? 0)} آزمون</Badge>
             </div>
-            <Badge line>نمایشی</Badge>
-          </div>
-          <div className="stack" style={{ gap: 4 }}>
-            <div className="bold small">پشتیبان‌گیری</div>
-            <div className="tiny muted">دیتابیس و فایل‌ها در یک فایل zip</div>
-            <button className="btn sm" disabled>
-              دریافت بکاپ
-            </button>
-          </div>
-          <div className="stack" style={{ gap: 4 }}>
-            <div className="bold small">مسیر داده‌ها</div>
-            <div className="tiny muted" style={{ direction: 'ltr', textAlign: 'right' }}>
-              data/app.db · data/uploads/
+            <div className="stack" style={{ gap: 4 }}>
+              <div className="bold small">مسیر فایل دیتابیس</div>
+              <div className="tiny muted" style={{ direction: 'ltr', textAlign: 'right', wordBreak: 'break-all' }}>
+                {health?.database ?? 'data/meftah.db'}
+              </div>
+              <div className="tiny muted">برای انتقال، کل پوشه‌ی پروژه (همراه با همین فایل) را کپی کن.</div>
             </div>
-            <Badge line>در نسخه‌ی بعد</Badge>
+            <div className="stack" style={{ gap: 4 }}>
+              <div className="bold small">پشتیبان‌گیری</div>
+              <div className="tiny muted">هر بار یک نسخه‌ی کامل و سالم از دیتابیس</div>
+              <button className="btn sm" onClick={() => { window.location.href = backupUrl(); }}>
+                دریافت بکاپ
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="small" style={{ lineHeight: 2 }}>
+            برای روشن کردن دیتابیس واقعی، در پوشه‌ی پروژه این دو دستور را اجرا کن و آدرس{' '}
+            <span style={{ direction: 'ltr', display: 'inline-block' }}>http://localhost:3000</span> را باز کن:
+            <pre
+              style={{
+                direction: 'ltr',
+                textAlign: 'left',
+                background: '#f6f8fc',
+                border: '1px solid #e8ecf4',
+                borderRadius: 10,
+                padding: '10px 12px',
+                marginTop: 8,
+                fontSize: 12,
+                overflowX: 'auto',
+              }}
+            >
+              {'bun run build\nbun run start'}
+            </pre>
+            داده‌ها در <span style={{ direction: 'ltr', display: 'inline-block' }}>data/meftah.db</span> ذخیره
+            می‌شوند؛ همین پوشه را روی VPS یا کامپیوتر مدرسه کپی کنی، همه‌ی داده‌ها با خودش می‌آید.
+          </div>
+        )}
       </Card>
     </div>
   );

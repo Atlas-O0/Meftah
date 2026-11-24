@@ -12,6 +12,7 @@ import {
   type StudentRecord,
 } from '../data/mock';
 import { getDataMode } from './mode';
+import { pushPatch } from './api';
 
 export const categoryTone: Record<RecordCategory, 'blue' | 'amber' | 'green' | 'red'> = {
   انضباطی: 'red',
@@ -43,14 +44,22 @@ export function getRecords(): StudentRecord[] {
 }
 
 export function addRecord(record: Omit<StudentRecord, 'id'>): StudentRecord {
-  const next: StudentRecord = { ...record, id: `local-${Date.now()}-${items.length + 1}` };
+  const next: StudentRecord = { ...record, id: `rec-${Date.now()}-${items.length + 1}` };
   items = [next, ...items];
   emit();
+  void pushPatch({ records: [next] });
   return next;
 }
 
 export function removeRecord(id: string) {
   items = items.filter((item) => item.id !== id);
+  emit();
+  void pushPatch({ removedRecords: [id] });
+}
+
+/** جایگزینی کامل گزارش‌ها (هنگام بارگذاری از دیتابیس) */
+export function replaceRecords(list: StudentRecord[]) {
+  items = [...list];
   emit();
 }
 

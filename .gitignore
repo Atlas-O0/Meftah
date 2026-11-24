@@ -2,3 +2,6 @@ node_modules/
 dist/
 *.local
 .DS_Store
+
+# دیتابیس و پشتیبان‌های واقعی مدرسه (هرگز در گیت نرود)
+data/

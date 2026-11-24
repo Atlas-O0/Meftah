@@ -4,6 +4,7 @@
  */
 
 import type { Exam, Score, Student } from '../data/mock';
+import { pushClear, pushPatch } from './api';
 
 const KEY = 'meftah-excel-imports-v1';
 
@@ -44,6 +45,9 @@ export function appendSavedImports(patch: SavedImports) {
   } catch {
     /* اگر حافظه پر بود، فقط همین نشست کار می‌کند */
   }
+
+  /* اگر سرور بالاست، همان لحظه در SQLite هم ذخیره می‌شود */
+  void pushPatch(patch);
 }
 
 export function clearSavedImports() {
@@ -52,4 +56,5 @@ export function clearSavedImports() {
   } catch {
     /* بی‌اهمیت */
   }
+  void pushClear();
 }

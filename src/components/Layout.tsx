@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { currentUser, classes } from '../data/mock';
 import { fa } from '../lib/fa';
 import { Icon } from './ui';
+import { dataSource } from '../lib/bootstrap';
 
 export const navigate = (path: string) => {
   window.location.hash = path;
@@ -69,7 +70,7 @@ export default function Layout({
             </div>
           </div>
           <div className="tiny muted" style={{ padding: '6px 8px 0', lineHeight: 1.6 }}>
-            نسخه‌ی نمایشی — داده‌های نمونه
+            {dataSource.online ? 'دیتابیس متصل — data/meftah.db' : 'حالت مرورگر — بدون سرور'}
           </div>
         </div>
       </aside>
@@ -156,7 +157,7 @@ export function Login({ onEnter }: { onEnter: () => void }) {
         </div>
 
         <div className="tiny" style={{ color: 'rgba(255,255,255,.6)' }}>
-          نسخه‌ی نمایشی · بدون ذخیره‌سازی · ساخته‌شده برای اجرا در شبکه‌ی مدرسه
+          اجرا در شبکه‌ی مدرسه یا VPS · داده‌ها در یک فایل SQLite
         </div>
       </div>
 
