@@ -428,3 +428,34 @@ export function scorePointsForStudent(studentId: string): ScorePoint[] {
 }
 
 export const allSeries = series;
+
+/* ---------------- مقایسه روی یک مقیاس مشترک ---------------- */
+
+/** حداکثر مقیاس سری: ۱۰۰ برای درصدی‌ها، ۲۰ برای نمره‌ای‌ها */
+export function scaleOf(seriesId: SeriesId): number {
+  const item = seriesById(seriesId);
+  return item.kind === 'percent' ? 100 : item.maxScore;
+}
+
+/** مقدار مقایسه‌ای یک درصد (۰ تا ۱۰۰) روی مقیاس همان سری */
+export function toScale(percent: number, seriesId: SeriesId): number {
+  return (percent / 100) * scaleOf(seriesId);
+}
+
+export function seriesValueForStudent(studentId: string, seriesId: SeriesId): number | null {
+  return seriesById(seriesId).kind === 'percent'
+    ? seriesPercentForStudent(studentId, seriesId)
+    : seriesScoreForStudent(studentId, seriesId);
+}
+
+export function seriesValueForClass(classId: string, seriesId: SeriesId): number {
+  return seriesById(seriesId).kind === 'percent'
+    ? seriesPercentForClass(classId, seriesId)
+    : seriesScoreForClass(classId, seriesId);
+}
+
+export function seriesValueForSchool(seriesId: SeriesId): number {
+  return seriesById(seriesId).kind === 'percent'
+    ? seriesPercentForSchool(seriesId)
+    : seriesScoreForSchool(seriesId);
+}

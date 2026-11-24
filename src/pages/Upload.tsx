@@ -1,5 +1,14 @@
 import { useMemo, useState } from 'react';
-import { classes, exams, scores, series, students, subjects, type SeriesId } from '../data/mock';
+import {
+  classes,
+  exams,
+  orderedSeries,
+  scores,
+  series,
+  students,
+  subjects,
+  type SeriesId,
+} from '../data/mock';
 import { fa, faDate, faPct, faScore } from '../lib/fa';
 import { Badge, Card, Icon } from '../components/ui';
 
@@ -103,7 +112,7 @@ export default function Upload() {
         <div className="grid cols-2">
           <Card title="این کارنامه‌ها مال کدام سری هستند؟" subtitle="قالب خواندن هر سری جداست؛ فایل‌ها با هم قاطی نمی‌شوند">
             <div className="stack">
-              {series.map((s) => (
+              {orderedSeries.map((s) => (
                 <button
                   key={s.id}
                   className="list-item"

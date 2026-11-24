@@ -14,15 +14,22 @@ import {
 } from 'recharts';
 import {
   classes,
-  disciplineNotes,
+  currentUser,
+  orderedSeries,
+  recordCategories,
+  recordKinds,
   scores,
   series,
+  seriesGroups,
   studentById,
   subjects,
-  type NoteKind,
+  type RecordCategory,
+  type RecordKind,
   type SeriesId,
 } from '../data/mock';
 import { fa, faDate, faPct, faScore, initials } from '../lib/fa';
+import { todayJalali } from '../lib/jalali';
+import { addRecord, categoryTone, kindTone, useStudentRecords } from '../lib/records';
 import {
   examsForClassSeries,
   growthForStudent,
@@ -37,13 +44,6 @@ import {
 } from '../lib/stats';
 import { Badge, Card, ChartTip, Icon, Modal, Progress, axisStyle, chartTicks } from '../components/ui';
 
-const noteTone: Record<NoteKind, 'green' | 'amber' | 'red' | 'blue'> = {
-  تشویق: 'green',
-  تذکر: 'amber',
-  غیبت: 'red',
-  مشاوره: 'blue',
-};
-
 function toneOf(percent: number): string {
   if (percent >= 85) return '#0ca678';
   if (percent >= 70) return '#4c6ef5';
@@ -54,10 +54,11 @@ function toneOf(percent: number): string {
 export default function StudentProfile({ id }: { id: string }) {
   const student = studentById(id);
   const [tab, setTab] = useState<SeriesId>('ghalamchi');
-  const [notes, setNotes] = useState(disciplineNotes.filter((n) => n.studentId === id));
+  const notes = useStudentRecords(id);
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
-  const [noteKind, setNoteKind] = useState<NoteKind>('تشویق');
+  const [noteKind, setNoteKind] = useState<RecordKind>('تشویق');
+  const [noteCategory, setNoteCategory] = useState<RecordCategory>('انضباطی');
 
   if (!student) {
     return (
@@ -103,12 +104,10 @@ export default function StudentProfile({ id }: { id: string }) {
     }))
     .sort((a, b) => b.percent - a.percent);
 
-  const counts = {
-    تشویق: notes.filter((n) => n.kind === 'تشویق').length,
-    تذکر: notes.filter((n) => n.kind === 'تذکر').length,
-    غیبت: notes.filter((n) => n.kind === 'غیبت').length,
-    مشاوره: notes.filter((n) => n.kind === 'مشاوره').length,
-  };
+  const categoryCounts = recordCategories.map((category) => ({
+    category,
+    count: notes.filter((note) => note.category === category).length,
+  }));
 
   return (
     <div className="stack">
@@ -125,7 +124,7 @@ export default function StudentProfile({ id }: { id: string }) {
               کد {fa(student.code)} · کلاس {studentClass.name} · دبیر {studentClass.teacher}
             </div>
             <div className="row" style={{ gap: 14, marginTop: 10, flexWrap: 'wrap' }}>
-              {series.map((s) => {
+              {orderedSeries.map((s) => {
                 const p = seriesPercentForStudent(student.id, s.id);
                 const raw = seriesScoreForStudent(student.id, s.id);
                 if (p === null) {
@@ -154,7 +153,7 @@ export default function StudentProfile({ id }: { id: string }) {
               <Icon name="print" /> چاپ کارنامه
             </button>
             <button className="btn" onClick={() => setNoteOpen(true)}>
-              <Icon name="plus" /> مورد انضباطی
+              <Icon name="plus" /> گزارش جدید
             </button>
           </div>
         </div>
@@ -164,7 +163,7 @@ export default function StudentProfile({ id }: { id: string }) {
       <div className="grid cols-2">
         <Card
           title="نمودار درصدی"
-          subtitle="قلمچی و ماز — درصد دانش‌آموز در برابر میانگین"
+          subtitle="قلمچی، ماز و مشاوره — درصد دانش‌آموز در برابر میانگین"
         >
           {percentChart.length === 0 ? (
             <div className="empty">نمره‌ی درصدی برای این دانش‌آموز ثبت نشده است.</div>
@@ -222,7 +221,7 @@ export default function StudentProfile({ id }: { id: string }) {
 
         <Card
           title="نمودار نمره‌ای"
-          subtitle="کپسول، مستمرها و نوبت‌ها — نمره از ۲۰ در برابر میانگین"
+          subtitle="مستمرها، نوبت‌ها و کپسول نهایی — نمره از ۲۰ در برابر میانگین"
         >
           {scoreChart.length === 0 ? (
             <div className="empty">نمره‌ی نمره‌ای برای این دانش‌آموز ثبت نشده است.</div>
@@ -256,21 +255,32 @@ export default function StudentProfile({ id }: { id: string }) {
 
       {/* انتخاب سری */}
       <div className="row" style={{ flexWrap: 'wrap', gap: 10 }}>
-        <div className="tabs">
-          {series.map((s) => {
-            const own = seriesPercentForStudent(student.id, s.id);
-            return (
-              <button
-                key={s.id}
-                className={`tab${tab === s.id ? ' active' : ''}`}
-                onClick={() => setTab(s.id)}
-              >
-                {s.name}
-                {s.optional && <span className="tiny muted"> · اختیاری</span>}
-                {own === null && <span className="tiny muted"> (ندارد)</span>}
-              </button>
-            );
-          })}
+        <div className="tabs" style={{ flexWrap: 'wrap' }}>
+          {seriesGroups.map((group) => (
+            <div key={group.title} className="row" style={{ gap: 6, alignItems: 'center' }}>
+              <span className="tiny muted" style={{ marginInlineEnd: 2 }}>
+                {group.short}
+              </span>
+              {group.ids.map((seriesId) => {
+                const item = series.find((s) => s.id === seriesId)!;
+                const own = seriesPercentForStudent(student.id, item.id);
+                return (
+                  <button
+                    key={item.id}
+                    className={`tab${tab === item.id ? ' active' : ''}`}
+                    onClick={() => setTab(item.id)}
+                  >
+                    {item.name}
+                    {item.optional && <span className="tiny muted"> · اختیاری</span>}
+                    {own === null && <span className="tiny muted"> (ندارد)</span>}
+                  </button>
+                );
+              })}
+              <span className="tiny muted" style={{ opacity: 0.4, marginInline: 4 }}>
+                |
+              </span>
+            </div>
+          ))}
         </div>
         <div style={{ flex: 1 }} />
         <span className="tiny muted">
@@ -466,19 +476,25 @@ export default function StudentProfile({ id }: { id: string }) {
       {/* انضباط */}
       <div className="grid cols-2">
         <Card
-          title="گزارش انضباطی"
-          subtitle={`${fa(notes.length)} مورد ثبت‌شده`}
+          title="گزارش‌ها و فعالیت‌ها"
+          subtitle={`${fa(notes.length)} مورد — انضباطی، فرهنگی، پژوهشی، ورزشی`}
           action={
-            <button className="btn sm" onClick={() => setNoteOpen(true)}>
-              <Icon name="plus" size={15} /> افزودن
-            </button>
+            <div className="row" style={{ gap: 6 }}>
+              <a className="btn ghost sm" href="#/records">
+                همه
+              </a>
+              <button className="btn sm" onClick={() => setNoteOpen(true)}>
+                <Icon name="plus" size={15} /> افزودن
+              </button>
+            </div>
           }
         >
-          <div className="row" style={{ gap: 8, marginBottom: 12 }}>
-            <Badge tone="green">تشویق {fa(counts.تشویق)}</Badge>
-            <Badge tone="amber">تذکر {fa(counts.تذکر)}</Badge>
-            <Badge tone="red">غیبت {fa(counts.غیبت)}</Badge>
-            <Badge tone="blue">مشاوره {fa(counts.مشاوره)}</Badge>
+          <div className="row" style={{ gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+            {categoryCounts.map(({ category, count }) => (
+              <Badge key={category} tone={categoryTone[category]}>
+                {category} {fa(count)}
+              </Badge>
+            ))}
           </div>
           {notes.length === 0 ? (
             <div className="empty">موردی ثبت نشده است.</div>
@@ -486,7 +502,10 @@ export default function StudentProfile({ id }: { id: string }) {
             <div className="stack" style={{ gap: 0 }}>
               {notes.map((note) => (
                 <div className="list-item" key={note.id} style={{ alignItems: 'flex-start' }}>
-                  <Badge tone={noteTone[note.kind]}>{note.kind}</Badge>
+                  <div className="stack" style={{ gap: 4, alignItems: 'flex-start', minWidth: 62 }}>
+                    <Badge tone={categoryTone[note.category]}>{note.category}</Badge>
+                    <Badge tone={kindTone[note.kind]}>{note.kind}</Badge>
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="small">{note.text}</div>
                     <div className="tiny muted num">
@@ -536,29 +555,26 @@ export default function StudentProfile({ id }: { id: string }) {
 
       <Modal
         open={noteOpen}
-        title="افزودن مورد انضباطی"
+        title={`افزودن گزارش برای ${student.name}`}
         onClose={() => setNoteOpen(false)}
         footer={
           <>
             <button
               className="btn primary"
               onClick={() => {
-                setNotes((prev) => [
-                  {
-                    id: `local-${Date.now()}`,
-                    studentId: student.id,
-                    date: '1404-12-15',
-                    kind: noteKind,
-                    text: noteText || 'بدون توضیح',
-                    by: 'خانم موسوی',
-                  },
-                  ...prev,
-                ]);
+                addRecord({
+                  studentId: student.id,
+                  category: noteCategory,
+                  kind: noteKind,
+                  date: todayJalali(),
+                  text: noteText || 'بدون توضیح',
+                  by: currentUser.name,
+                });
                 setNoteText('');
                 setNoteOpen(false);
               }}
             >
-              ثبت مورد
+              ثبت گزارش
             </button>
             <button className="btn" onClick={() => setNoteOpen(false)}>
               انصراف
@@ -566,15 +582,35 @@ export default function StudentProfile({ id }: { id: string }) {
           </>
         }
       >
-        <div className="field">
-          <label>نوع مورد</label>
-          <select className="select" value={noteKind} onChange={(e) => setNoteKind(e.target.value as NoteKind)}>
-            {(Object.keys(noteTone) as NoteKind[]).map((kind) => (
-              <option key={kind} value={kind}>
-                {kind}
-              </option>
-            ))}
-          </select>
+        <div className="grid cols-2">
+          <div className="field">
+            <label>دسته</label>
+            <select
+              className="select"
+              value={noteCategory}
+              onChange={(e) => setNoteCategory(e.target.value as RecordCategory)}
+            >
+              {recordCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field">
+            <label>نوع</label>
+            <select
+              className="select"
+              value={noteKind}
+              onChange={(e) => setNoteKind(e.target.value as RecordKind)}
+            >
+              {recordKinds.map((kind) => (
+                <option key={kind} value={kind}>
+                  {kind}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="field">
           <label>توضیح</label>
@@ -585,7 +621,9 @@ export default function StudentProfile({ id }: { id: string }) {
             placeholder="مثلاً همکاری خوب در کار گروهی"
           />
         </div>
-        <div className="tiny muted">این مورد فقط تا رفرش صفحه می‌ماند؛ در نسخه‌ی بعدی ذخیره می‌شود.</div>
+        <div className="tiny muted">
+          این گزارش بلافاصله در پروفایل و صفحه‌ی گزارش‌ها دیده می‌شود؛ فقط تا رفرش صفحه می‌ماند.
+        </div>
       </Modal>
     </div>
   );

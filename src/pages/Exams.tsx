@@ -1,89 +1,189 @@
-import { classes, exams, series, students } from '../data/mock';
-import { fa, faDate, faPct } from '../lib/fa';
-import { examPercentForClass } from '../lib/stats';
+import { useState } from 'react';
+import {
+  classes,
+  exams,
+  orderedSeries,
+  seriesById,
+  seriesGroups,
+  students,
+  type ExamSeries,
+  type SeriesId,
+} from '../data/mock';
+import { fa, faDate, faPct, faScore } from '../lib/fa';
+import { examPercentForClass, examRawForClass, seriesValueForSchool } from '../lib/stats';
 import { Badge, Card, Icon } from '../components/ui';
 
+function SeriesRow({
+  item,
+  selected,
+  onSelect,
+}: {
+  item: ExamSeries;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const rows = exams.filter((e) => e.seriesId === item.id);
+  const isPercent = item.kind === 'percent';
+  const avg = seriesValueForSchool(item.id);
+  const rounds = [...new Set(rows.map((e) => e.round))].length;
+  const roundTitles = [...new Set(rows.map((e) => e.title))];
+
+  return (
+    <tr style={{ background: selected ? '#f5f8ff' : undefined }}>
+      <td>
+        <div className="row" style={{ gap: 8 }}>
+          <span className="dot" style={{ background: item.color }} />
+          <span className="bold small">{item.name}</span>
+          {item.optional && <Badge line>اختیاری</Badge>}
+        </div>
+      </td>
+      <td className="tiny num muted">از {fa(item.maxScore)}</td>
+      <td className="small">
+        {fa(rows.length)} آزمون
+        <span className="tiny muted"> · {fa(rounds)} دور</span>
+      </td>
+      <td className="tiny muted">{roundTitles.join(' · ')}</td>
+      <td>
+        <Badge tone={isPercent ? 'blue' : 'green'}>
+          {isPercent ? faPct(avg) : `${faScore(avg)} از ${fa(item.maxScore)}`}
+        </Badge>
+      </td>
+      <td>
+        <Badge tone={item.hasTemplate ? 'green' : 'amber'} line>
+          {item.hasTemplate ? 'قالب آماده' : 'قالب ندارد'}
+        </Badge>
+      </td>
+      <td>
+        <button className={`btn sm${selected ? ' primary' : ''}`} onClick={onSelect}>
+          دیدن آزمون‌ها
+        </button>
+      </td>
+    </tr>
+  );
+}
+
 export default function Exams() {
+  const [seriesId, setSeriesId] = useState<SeriesId>('ghalamchi');
+  const seriesItem = seriesById(seriesId);
+  const isPercent = seriesItem.kind === 'percent';
+  const rows = exams
+    .filter((e) => e.seriesId === seriesId)
+    .sort((left, right) => left.round - right.round || left.classId.localeCompare(right.classId));
+
   return (
     <div className="stack">
       <div className="alert info">
         <Icon name="alert" size={16} />
         <div>
-          هر آزمون فقط به یک سری تعلق دارد. میانگین‌ها و نمودارهای هر سری جدا حساب می‌شوند؛ این
-          کارنامه‌ها هیچ‌وقت با هم جمع نمی‌شوند.
+          آزمون‌ها به دو خانواده‌ی جدا تقسیم شده‌اند: <b>تشریحی</b> (نمره‌ای از ۲۰) و <b>تستی</b> (درصدی
+          از ۱۰۰). میانگین‌ها، رتبه‌ها و نمودارهای هر سری جدا حساب می‌شوند و هیچ‌وقت با هم جمع نمی‌شوند.
         </div>
       </div>
 
-      {series.map((s) => {
-        const rows = exams.filter((e) => e.seriesId === s.id);
-        const avg = rows.length
-          ? rows.reduce((sum, exam) => sum + examPercentForClass(exam.id), 0) / rows.length
-          : 0;
+      {seriesGroups.map((group) => {
+        const items = group.ids.map((id) => seriesById(id));
         return (
-          <Card
-            key={s.id}
-            title={
-              <span className="row" style={{ gap: 8 }}>
-                <span className="dot" style={{ background: s.color }} />
-                {s.name}
-              </span>
-            }
-            subtitle={`${fa(rows.length)} آزمون · حداکثر نمره ${fa(s.maxScore)} · ${
-              s.hasTemplate ? 'قالب آماده' : 'قالب ندارد'
-            }`}
-            action={
-              <div className="row" style={{ gap: 8 }}>
-                <span className="tiny muted">میانگین سری</span>
-                <span className="bold num small">{faPct(avg)}</span>
-              </div>
-            }
-            flush
-          >
+          <Card key={group.title} title={group.title} subtitle={group.note} flush>
             <div className="table-wrap">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>آزمون</th>
-                    <th>کلاس</th>
-                    <th>نوع</th>
-                    <th>تاریخ</th>
-                    <th>دانش‌آموز</th>
-                    <th>میانگین کلاس</th>
+                    <th>سری</th>
+                    <th>حداکثر</th>
+                    <th>تعداد</th>
+                    <th>دورها</th>
+                    <th>میانگین مدرسه</th>
+                    <th>قالب</th>
                     <th />
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((exam) => {
-                    const count = students.filter((st) => st.classId === exam.classId).length;
-                    const percent = examPercentForClass(exam.id);
-                    return (
-                      <tr key={exam.id}>
-                        <td className="bold small">{exam.title}</td>
-                        <td className="small">{classes.find((c) => c.id === exam.classId)?.name}</td>
-                        <td>
-                          <Badge line>{exam.kind}</Badge>
-                        </td>
-                        <td className="tiny num muted">{faDate(exam.date)}</td>
-                        <td className="tiny num">{fa(count)}</td>
-                        <td>
-                          <Badge tone={percent >= 85 ? 'green' : percent >= 70 ? 'blue' : percent >= 50 ? 'amber' : 'red'}>
-                            {faPct(percent)}
-                          </Badge>
-                        </td>
-                        <td>
-                          <a className="btn sm" href={`#/exams/${exam.id}`}>
-                            ورود نمره
-                          </a>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {items.map((item) => (
+                    <SeriesRow
+                      key={item.id}
+                      item={item}
+                      selected={seriesId === item.id}
+                      onSelect={() => setSeriesId(item.id)}
+                    />
+                  ))}
                 </tbody>
               </table>
             </div>
           </Card>
         );
       })}
+
+      <Card
+        title={`آزمون‌های ${seriesItem.name}`}
+        subtitle={`${fa(rows.length)} آزمون · ${
+          isPercent ? 'درصدی از ۱۰۰' : `نمره‌ای از ${fa(seriesItem.maxScore)}`
+        } · ${seriesItem.templateNote}`}
+        action={
+          <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+            {orderedSeries.map((s) => (
+              <button
+                key={s.id}
+                className={`chip${seriesId === s.id ? ' active' : ''}`}
+                onClick={() => setSeriesId(s.id)}
+              >
+                {s.short}
+              </button>
+            ))}
+          </div>
+        }
+        flush
+      >
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>آزمون</th>
+                <th>کلاس</th>
+                <th>دور</th>
+                <th>تاریخ</th>
+                <th>دانش‌آموز</th>
+                <th>میانگین کلاس</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((exam) => {
+                const count = students.filter((st) => st.classId === exam.classId).length;
+                const percent = examPercentForClass(exam.id);
+                const raw = examRawForClass(exam.id);
+                const tone =
+                  percent >= 85 ? 'green' : percent >= 70 ? 'blue' : percent >= 50 ? 'amber' : 'red';
+                return (
+                  <tr key={exam.id}>
+                    <td className="bold small">{exam.title}</td>
+                    <td className="small">{classes.find((c) => c.id === exam.classId)?.name}</td>
+                    <td className="tiny num muted">{fa(exam.round)}</td>
+                    <td className="tiny num muted">{faDate(exam.date)}</td>
+                    <td className="tiny num">{fa(count)}</td>
+                    <td>
+                      <Badge tone={tone}>
+                        {isPercent ? faPct(percent) : `${faScore(raw)} از ${fa(exam.maxScore)}`}
+                      </Badge>
+                    </td>
+                    <td>
+                      <a className="btn sm" href={`#/exams/${exam.id}`}>
+                        ورود نمره
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={7}>
+                    <div className="empty">برای این سری آزمونی ثبت نشده است.</div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }

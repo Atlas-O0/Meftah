@@ -4,10 +4,9 @@ import { fa, faPct, faScore } from '../lib/fa';
 import { Badge, Card, Icon, Progress } from '../components/ui';
 
 const teachers = [
-  { name: 'خانم موسوی', role: 'مدیر و دبیر ریاضی', classes: '۱۲۱ · ۱۲۲ · ۱۱۳' },
-  { name: 'آقای رستمی', role: 'دبیر علوم', classes: '۱۲۳ · ۱۲۴ · ۱۱۴' },
-  { name: 'خانم کاظمی', role: 'دبیر ادبیات', classes: '۱۲۵ · ۱۲۶ · ۱۱۵' },
-  { name: 'آقای شریفی', role: 'دبیر ریاضی', classes: '۱۱۱ · ۱۱۲ · ۱۱۶' },
+  { name: 'خانم موسوی', role: 'مدیر و دبیر ریاضی', classes: '۱۲۱ · ۱۲۲' },
+  { name: 'آقای رستمی', role: 'دبیر علوم', classes: '۱۲۳ · ۱۲۴' },
+  { name: 'خانم کاظمی', role: 'دبیر ادبیات', classes: '۱۲۵ · ۱۲۶' },
 ];
 
 export default function Settings() {
@@ -29,7 +28,7 @@ export default function Settings() {
   return (
     <div className="stack">
       <div className="grid cols-2">
-        <Card title="کلاس‌ها" subtitle={`${fa(classes.length)} کلاس فعال`}>
+        <Card title="کلاس‌ها" subtitle={`${fa(classes.length)} کلاس فعال — پایه دوازدهم`}>
           {classes.map((c) => (
             <div className="list-item" key={c.id}>
               <div className="avatar">{c.name.slice(-1)}</div>

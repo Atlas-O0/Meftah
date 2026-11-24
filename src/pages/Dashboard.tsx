@@ -26,10 +26,12 @@ export default function Dashboard() {
   const classData = classComparison('ghalamchi');
   const ghalamchiTrend = seriesTrend('ghalamchi');
   const mazTrend = seriesTrend('maz');
+  const moshavereTrend = seriesTrend('moshavere');
   const trendData = ghalamchiTrend.map((row, i) => ({
     name: row.name,
     ghalamchi: row.percent,
     maz: mazTrend[i]?.percent ?? null,
+    moshavere: moshavereTrend[i]?.percent ?? null,
   }));
 
   const attention = needsAttention(5);
@@ -81,7 +83,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <Card title="روند آزمون‌های درصدی" subtitle="قلمچی چهار دور · ماز دو دور (اختیاری)">
+        <Card title="روند آزمون‌های تستی" subtitle="قلمچی چهار دور · ماز دو دور (اختیاری) · مشاوره دو دور">
           <div className="chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trendData} margin={{ top: 6, right: 8, left: -18, bottom: 0 }}>
@@ -105,6 +107,15 @@ export default function Dashboard() {
                   strokeWidth={2.5}
                   dot={{ r: 3 }}
                 />
+                <Line
+                  type="monotone"
+                  dataKey="moshavere"
+                  name="مشاوره"
+                  stroke="#1c7ed6"
+                  strokeWidth={2.5}
+                  strokeDasharray="6 4"
+                  dot={{ r: 3 }}
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -114,6 +125,9 @@ export default function Dashboard() {
             </span>
             <span>
               <i style={{ background: '#7048e8' }} /> ماز
+            </span>
+            <span>
+              <i style={{ background: '#1c7ed6' }} /> مشاوره
             </span>
           </div>
         </Card>

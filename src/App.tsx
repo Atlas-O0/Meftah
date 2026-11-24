@@ -7,6 +7,7 @@ import Exams from './pages/Exams';
 import ExamEntry from './pages/ExamEntry';
 import Upload from './pages/Upload';
 import Compare from './pages/Compare';
+import Records from './pages/Records';
 import Settings from './pages/Settings';
 
 function useRoute() {
@@ -50,7 +51,7 @@ export default function App() {
     } else {
       page = <Exams />;
       title = 'آزمون‌ها';
-      subtitle = 'به تفکیک سری و کلاس';
+      subtitle = 'تشریحی (نمره‌ای) و تستی (درصدی) — به تفکیک سری و کلاس';
     }
   } else if (parts[0] === 'upload') {
     page = <Upload />;
@@ -59,7 +60,11 @@ export default function App() {
   } else if (parts[0] === 'compare') {
     page = <Compare />;
     title = 'مقایسه';
-    subtitle = 'کلاس‌ها و دانش‌آموز با میانگین مدرسه';
+    subtitle = 'دانش‌آموز با دانش‌آموز، کلاس با کلاس و میانگین کلاس‌ها';
+  } else if (parts[0] === 'records') {
+    page = <Records />;
+    title = 'گزارش‌ها';
+    subtitle = 'انضباطی، فرهنگی، پژوهشی و ورزشی';
   } else if (parts[0] === 'settings') {
     page = <Settings />;
     title = 'تنظیمات';

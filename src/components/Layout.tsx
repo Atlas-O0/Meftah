@@ -12,6 +12,7 @@ const nav = [
   { path: '/students', label: 'دانش‌آموزان', icon: 'users' },
   { path: '/exams', label: 'آزمون‌ها', icon: 'exams' },
   { path: '/upload', label: 'آپلود کارنامه', icon: 'upload' },
+  { path: '/records', label: 'گزارش‌ها', icon: 'file' },
   { path: '/compare', label: 'مقایسه', icon: 'compare' },
   { path: '/settings', label: 'تنظیمات', icon: 'settings' },
 ];

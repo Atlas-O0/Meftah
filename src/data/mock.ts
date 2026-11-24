@@ -11,7 +11,8 @@ export type SeriesId =
   | 'nobat1'
   | 'mostamar2'
   | 'nobat2'
-  | 'maz';
+  | 'maz'
+  | 'moshavere';
 
 /** درصدی = از ۱۰۰ ، نمره‌ای = از ۲۰ */
 export type SeriesKind = 'percent' | 'score';
@@ -75,13 +76,18 @@ export interface Score {
   value: number;
 }
 
-export type NoteKind = 'تذکر' | 'تشویق' | 'غیبت' | 'مشاوره';
+export type RecordCategory = 'انضباطی' | 'فرهنگی' | 'پژوهشی' | 'ورزشی';
+export type RecordKind = 'تشویق' | 'فعالیت' | 'تذکر' | 'غیبت' | 'مشاوره';
 
-export interface DisciplineNote {
+export const recordCategories: RecordCategory[] = ['انضباطی', 'فرهنگی', 'پژوهشی', 'ورزشی'];
+export const recordKinds: RecordKind[] = ['تشویق', 'فعالیت', 'تذکر', 'غیبت', 'مشاوره'];
+
+export interface StudentRecord {
   id: string;
   studentId: string;
+  category: RecordCategory;
+  kind: RecordKind;
   date: string;
-  kind: NoteKind;
   text: string;
   by: string;
 }
@@ -116,7 +122,7 @@ export const series: ExamSeries[] = [
   },
   {
     id: 'capsule',
-    name: 'کپسول',
+    name: 'کپسول نهایی',
     short: 'کپسول',
     color: '#0ca678',
     maxScore: 20,
@@ -186,7 +192,40 @@ export const series: ExamSeries[] = [
     templateNote: 'درصدی — اختیاری، همه‌ی دانش‌آموزها ندارند',
     thresholds: { ...t },
   },
+  {
+    id: 'moshavere',
+    name: 'آزمون مشاوره',
+    short: 'مشاوره',
+    color: '#1c7ed6',
+    maxScore: 100,
+    kind: 'percent',
+    optional: false,
+    hasTemplate: false,
+    templateNote: 'درصدی — آزمون‌های مشاوره‌ای',
+    thresholds: { ...t },
+  },
 ];
+
+/** دو خانواده‌ی جدا: تشریحی (نمره‌ای) و تستی (درصدی) */
+export const seriesGroups: Array<{ title: string; short: string; note: string; ids: SeriesId[] }> = [
+  {
+    title: 'آزمون‌های تشریحی',
+    short: 'تشریحی',
+    note: 'نمره‌ای از ۲۰ — مستمر ۱، نوبت اول، مستمر ۲، نوبت دوم، کپسول نهایی',
+    ids: ['mostamar1', 'nobat1', 'mostamar2', 'nobat2', 'capsule'],
+  },
+  {
+    title: 'آزمون‌های تستی',
+    short: 'تستی',
+    note: 'درصدی از ۱۰۰ — قلمچی، ماز و آزمون‌های مشاوره',
+    ids: ['ghalamchi', 'maz', 'moshavere'],
+  },
+];
+
+/** سری‌ها به ترتیب گروه‌ها (برای تب‌ها و فهرست‌ها) */
+export const orderedSeries: ExamSeries[] = seriesGroups.flatMap((group) =>
+  group.ids.map((id) => series.find((s) => s.id === id)!),
+);
 
 export const classes: ClassRoom[] = [
   // پایه دوازدهم — ۱۲۱ تا ۱۲۶
@@ -196,13 +235,6 @@ export const classes: ClassRoom[] = [
   { id: 'c124', name: '۱۲۴', grade: 'دوازدهم', teacher: 'آقای رستمی' },
   { id: 'c125', name: '۱۲۵', grade: 'دوازدهم', teacher: 'خانم کاظمی' },
   { id: 'c126', name: '۱۲۶', grade: 'دوازدهم', teacher: 'خانم کاظمی' },
-  // پایه یازدهم — ۱۱۱ تا ۱۱۶
-  { id: 'c111', name: '۱۱۱', grade: 'یازدهم', teacher: 'آقای شریفی' },
-  { id: 'c112', name: '۱۱۲', grade: 'یازدهم', teacher: 'آقای شریفی' },
-  { id: 'c113', name: '۱۱۳', grade: 'یازدهم', teacher: 'خانم موسوی' },
-  { id: 'c114', name: '۱۱۴', grade: 'یازدهم', teacher: 'آقای رستمی' },
-  { id: 'c115', name: '۱۱۵', grade: 'یازدهم', teacher: 'خانم کاظمی' },
-  { id: 'c116', name: '۱۱۶', grade: 'یازدهم', teacher: 'آقای شریفی' },
 ];
 
 export const subjects: Subject[] = [
@@ -240,24 +272,6 @@ const rawStudents: Array<[string, string, number, number]> = [
   ['ابوالفضل یوسفی', 'c126', 0.83, 0.02],
   ['محمدطاها جعفری', 'c126', 0.71, -0.01],
   ['عرفان مرادپور', 'c126', 0.49, 0.01],
-  ['سبحان فلاحی', 'c111', 0.89, 0.015],
-  ['متین ارجمند', 'c111', 0.74, 0.0],
-  ['نیما دهقان', 'c111', 0.6, -0.02],
-  ['ایلیا سلیمانی', 'c112', 0.81, 0.02],
-  ['پویا خسروی', 'c112', 0.7, 0.005],
-  ['بردیا نظامی', 'c112', 0.52, 0.03],
-  ['سامان مقدم', 'c113', 0.85, 0.01],
-  ['یوسف امینی', 'c113', 0.67, -0.015],
-  ['امیرمحمد شایان', 'c113', 0.56, 0.02],
-  ['محمدمهدی زارع', 'c114', 0.79, 0.035],
-  ['علی‌اصغر کوهی', 'c114', 0.63, -0.005],
-  ['هادی برزگر', 'c114', 0.47, 0.01],
-  ['فرزین رادمنش', 'c115', 0.76, 0.005],
-  ['مبین سپهری', 'c115', 0.61, 0.025],
-  ['امیرعباس گودرزی', 'c115', 0.5, -0.01],
-  ['شایان ملکی', 'c116', 0.73, 0.015],
-  ['محمدعمرانی', 'c116', 0.59, 0.03],
-  ['یاسین عبدی', 'c116', 0.44, 0.02],
 ];
 
 export const students: Student[] = rawStudents.map(([name, classId, ability, trend], i) => ({
@@ -290,6 +304,10 @@ const roundsOf: Record<SeriesId, Array<{ title: string; date: string; diff: numb
   maz: [
     { title: 'ماز ۱', date: '1404-09-27', diff: 0.92, kind: 'آزمون' },
     { title: 'ماز ۲', date: '1404-11-20', diff: 0.94, kind: 'آزمون' },
+  ],
+  moshavere: [
+    { title: 'مشاوره ۱', date: '1404-10-02', diff: 0.95, kind: 'آزمون' },
+    { title: 'مشاوره ۲', date: '1404-12-01', diff: 0.96, kind: 'آزمون' },
   ],
 };
 
@@ -339,21 +357,25 @@ for (const s of series) {
   });
 }
 
-export const disciplineNotes: DisciplineNote[] = [
-  { id: 'n1', studentId: 's1', date: '1404-08-22', kind: 'تشویق', text: 'همکاری خوب در فعالیت گروهی کلاس', by: 'خانم موسوی' },
-  { id: 'n2', studentId: 's9', date: '1404-09-02', kind: 'تذکر', text: 'صحبت با هم‌کلاسی هنگام تدریس', by: 'آقای رستمی' },
-  { id: 'n3', studentId: 's15', date: '1404-09-11', kind: 'غیبت', text: 'غیبت بدون اطلاع — دو جلسه', by: 'خانم کاظمی' },
-  { id: 'n4', studentId: 's15', date: '1404-10-03', kind: 'مشاوره', text: 'جلسه‌ی مشاوره برای برنامه‌ی مطالعه', by: 'خانم کاظمی' },
-  { id: 'n5', studentId: 's5', date: '1404-10-08', kind: 'تشویق', text: 'بهترین پیشرفت ماه در درس ریاضی', by: 'خانم موسوی' },
-  { id: 'n6', studentId: 's10', date: '1404-10-19', kind: 'تذکر', text: 'تأخیر در تحویل تکالیف هفتگی', by: 'آقای رستمی' },
-  { id: 'n7', studentId: 's12', date: '1404-11-01', kind: 'تشویق', text: 'ارائه‌ی خوب کنفرانس علوم', by: 'آقای رستمی' },
-  { id: 'n8', studentId: 's9', date: '1404-11-06', kind: 'تذکر', text: 'استفاده از موبایل در زمان کلاس', by: 'آقای رستمی' },
-  { id: 'n9', studentId: 's2', date: '1404-11-12', kind: 'تشویق', text: 'مسئولیت‌پذیری در نظم کلاس', by: 'خانم موسوی' },
-  { id: 'n10', studentId: 's14', date: '1404-11-18', kind: 'مشاوره', text: 'گفتگو درباره‌ی افت نمره‌های اخیر', by: 'خانم کاظمی' },
-  { id: 'n11', studentId: 's20', date: '1404-11-05', kind: 'تشویق', text: 'کمک به هم‌کلاسی در حل تمرین‌های ریاضی', by: 'آقای شریفی' },
-  { id: 'n12', studentId: 's27', date: '1404-11-11', kind: 'تذکر', text: 'صحبت با هم‌کلاسی هنگام تدریس', by: 'خانم موسوی' },
-  { id: 'n13', studentId: 's31', date: '1404-11-16', kind: 'مشاوره', text: 'برنامه‌ریزی برای آزمون جامع', by: 'خانم کاظمی' },
-  { id: 'n14', studentId: 's34', date: '1404-11-20', kind: 'غیبت', text: 'غیبت بدون اطلاع — یک جلسه', by: 'آقای شریفی' },
+export const records: StudentRecord[] = [
+  { id: 'r1', studentId: 's1', category: 'انضباطی', kind: 'تشویق', date: '1404-08-22', text: 'همکاری خوب در فعالیت گروهی کلاس', by: 'خانم موسوی' },
+  { id: 'r2', studentId: 's9', category: 'انضباطی', kind: 'تذکر', date: '1404-09-02', text: 'صحبت با هم‌کلاسی هنگام تدریس', by: 'آقای رستمی' },
+  { id: 'r3', studentId: 's15', category: 'انضباطی', kind: 'غیبت', date: '1404-09-11', text: 'غیبت بدون اطلاع — دو جلسه', by: 'خانم کاظمی' },
+  { id: 'r4', studentId: 's15', category: 'پژوهشی', kind: 'مشاوره', date: '1404-10-03', text: 'جلسه‌ی مشاوره برای برنامه‌ی مطالعه', by: 'خانم کاظمی' },
+  { id: 'r5', studentId: 's5', category: 'پژوهشی', kind: 'تشویق', date: '1404-10-08', text: 'بهترین پیشرفت ماه در درس ریاضی', by: 'خانم موسوی' },
+  { id: 'r6', studentId: 's10', category: 'انضباطی', kind: 'تذکر', date: '1404-10-19', text: 'تأخیر در تحویل تکالیف هفتگی', by: 'آقای رستمی' },
+  { id: 'r7', studentId: 's12', category: 'پژوهشی', kind: 'تشویق', date: '1404-11-01', text: 'ارائه‌ی خوب کنفرانس علوم', by: 'آقای رستمی' },
+  { id: 'r8', studentId: 's9', category: 'انضباطی', kind: 'تذکر', date: '1404-11-06', text: 'استفاده از موبایل در زمان کلاس', by: 'آقای رستمی' },
+  { id: 'r9', studentId: 's2', category: 'انضباطی', kind: 'تشویق', date: '1404-11-12', text: 'مسئولیت‌پذیری در نظم کلاس', by: 'خانم موسوی' },
+  { id: 'r10', studentId: 's14', category: 'پژوهشی', kind: 'مشاوره', date: '1404-11-18', text: 'گفتگو درباره‌ی افت نمره‌های اخیر', by: 'خانم کاظمی' },
+  { id: 'r11', studentId: 's4', category: 'فرهنگی', kind: 'فعالیت', date: '1404-09-18', text: 'شرکت در مراسم هفته‌ی دفاع مقدس', by: 'خانم موسوی' },
+  { id: 'r12', studentId: 's7', category: 'فرهنگی', kind: 'تشویق', date: '1404-10-24', text: 'اجرای خوب سرود در مراسم صبحگاهی', by: 'آقای رستمی' },
+  { id: 'r13', studentId: 's16', category: 'فرهنگی', kind: 'فعالیت', date: '1404-11-09', text: 'مسئول غرفه‌ی نمایشگاه کتاب مدرسه', by: 'خانم کاظمی' },
+  { id: 'r14', studentId: 's6', category: 'ورزشی', kind: 'تشویق', date: '1404-09-29', text: 'مقام دوم فوتسال بین‌کلاسی', by: 'آقای رستمی' },
+  { id: 'r15', studentId: 's13', category: 'ورزشی', kind: 'فعالیت', date: '1404-10-16', text: 'عضویت در تیم والیبال مدرسه', by: 'آقای رستمی' },
+  { id: 'r16', studentId: 's8', category: 'ورزشی', kind: 'تشویق', date: '1404-11-14', text: 'رکورد داروی دو ۱۰۰ متر مدرسه', by: 'آقای رستمی' },
+  { id: 'r17', studentId: 's3', category: 'پژوهشی', kind: 'فعالیت', date: '1404-10-11', text: 'ارائه‌ی مقاله در جشنواره‌ی خوارزمی', by: 'خانم موسوی' },
+  { id: 'r18', studentId: 's17', category: 'فرهنگی', kind: 'فعالیت', date: '1404-11-21', text: 'همراهی در اردوی راهیان نور', by: 'خانم کاظمی' },
 ];
 
 export const imports: ImportRecord[] = [
