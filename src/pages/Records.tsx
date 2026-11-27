@@ -18,11 +18,12 @@ import {
   useRecords,
 } from '../lib/records';
 import { Badge, Card, Icon, Modal, StatCard } from '../components/ui';
+import { useClassFilter } from '../lib/classFilter';
 
 export default function Records() {
   const records = useRecords();
   const [category, setCategory] = useState<'all' | RecordCategory>('all');
-  const [classId, setClassId] = useState('all');
+  const classId = useClassFilter();
   const [kind, setKind] = useState<'all' | RecordKind>('all');
   const [open, setOpen] = useState(false);
 
@@ -77,20 +78,6 @@ export default function Records() {
             ))}
           </div>
           <div style={{ flex: 1 }} />
-          <select
-            className="select"
-            style={{ width: 120, height: 34 }}
-            value={classId}
-            onChange={(e) => setClassId(e.target.value)}
-            aria-label="فیلتر کلاس"
-          >
-            <option value="all">همه‌ی کلاس‌ها</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                کلاس {c.name}
-              </option>
-            ))}
-          </select>
           <select
             className="select"
             style={{ width: 130, height: 34 }}
@@ -185,8 +172,8 @@ export default function Records() {
       <div className="alert info">
         <Icon name="alert" size={16} />
         <div>
-          هر گزارش بلافاصله در پروفایل همان دانش‌آموز دیده می‌شود. در این نسخه‌ی نمایشی گزارش‌ها فقط در
-          حافظه‌ی همین تب می‌مانند و با رفرش به حالت اولیه برمی‌گردند.
+          هر گزارش بلافاصله در پروفایل همان دانش‌آموز دیده می‌شود و در دیتابیس ذخیره می‌شود؛ در حالت
+          بدون سرور هم در همین مرورگر می‌ماند.
         </div>
       </div>
 

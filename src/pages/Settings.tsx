@@ -7,6 +7,7 @@ import {
   subjects,
   trackLabels,
   type SeriesId,
+  type TrackId,
 } from '../data/mock';
 import { fa, faPct, faScore } from '../lib/fa';
 import { getDataMode, setDataMode } from '../lib/mode';
@@ -19,13 +20,15 @@ import {
   setSubjectThresholds,
   type SubjectThresholdMap,
 } from '../lib/thresholds';
-import { Badge, Card, Icon, Progress } from '../components/ui';
-
-const teachers = [
-  { name: 'خانم موسوی', role: 'مدیر و دبیر حسابان', classes: '۱۲۱ · ۱۲۲ — ریاضی فیزیک' },
-  { name: 'آقای رستمی', role: 'دبیر فیزیک', classes: '۱۲۳ ریاضی فیزیک · ۱۲۴ تجربی' },
-  { name: 'خانم کاظمی', role: 'دبیر زیست‌شناسی', classes: '۱۲۵ · ۱۲۶ — تجربی' },
-];
+import { Badge, Card, Icon, Modal, Progress } from '../components/ui';
+import {
+  addClass,
+  addTeacher,
+  getCustomClasses,
+  getTeachers,
+  removeTeacher,
+  useDirectoryVersion,
+} from '../lib/directory';
 
 export default function Settings() {
   const [thresholds, setThresholds] = useState<Record<SeriesId, { strong: number; good: number; pass: number }>>(
@@ -48,6 +51,27 @@ export default function Settings() {
   const [savedNotice, setSavedNotice] = useState('');
   const online = isServerOnline() || dataSource.online;
   const [health, setHealth] = useState<ServerHealth | null>(null);
+
+  useDirectoryVersion();
+  const customClasses = getCustomClasses();
+  const teacherList = getTeachers();
+  const [directoryNotice, setDirectoryNotice] = useState('');
+  const flashDirectory = (message: string) => {
+    setDirectoryNotice(message);
+    window.setTimeout(() => setDirectoryNotice(''), 4000);
+  };
+
+  const [classOpen, setClassOpen] = useState(false);
+  const [className, setClassName] = useState('');
+  const [classTrack, setClassTrack] = useState<TrackId>('math');
+  const [classTeacher, setClassTeacher] = useState('');
+  const [classError, setClassError] = useState('');
+
+  const [teacherOpen, setTeacherOpen] = useState(false);
+  const [teacherName, setTeacherName] = useState('');
+  const [teacherRole, setTeacherRole] = useState('');
+  const [teacherClasses, setTeacherClasses] = useState('');
+  const [teacherError, setTeacherError] = useState('');
 
   useEffect(() => {
     if (!online) return;
@@ -137,19 +161,25 @@ export default function Settings() {
                   {fa(students.filter((s) => s.classId === c.id).length)} دانش‌آموز
                 </div>
               </div>
-              <Badge line>فعال</Badge>
+              {customClasses.some((custom) => custom.id === c.id) ? (
+                <Badge tone="blue" line>
+                  تازه
+                </Badge>
+              ) : (
+                <Badge line>فعال</Badge>
+              )}
             </div>
           ))}
           <div className="row" style={{ marginTop: 12 }}>
-            <button className="btn sm">
+            <button className="btn sm" onClick={() => setClassOpen(true)}>
               <Icon name="plus" size={15} /> کلاس جدید
             </button>
           </div>
         </Card>
 
-        <Card title="کاربران" subtitle="معلم‌ها با همین حساب‌ها وارد می‌شوند">
-          {teachers.map((t) => (
-            <div className="list-item" key={t.name}>
+        <Card title="معلم‌ها" subtitle="فهرست دبیران مدرسه (برای نمایش و امضای کارنامه)">
+          {teacherList.map((t) => (
+            <div className="list-item" key={t.id}>
               <div className="avatar">{t.name.replace('خانم ', '').replace('آقای ', '').slice(0, 1)}</div>
               <div style={{ flex: 1 }}>
                 <div className="bold small">{t.name}</div>
@@ -160,15 +190,169 @@ export default function Settings() {
               <Badge tone={t.role.startsWith('مدیر') ? 'blue' : 'gray'}>
                 {t.role.startsWith('مدیر') ? 'مدیر' : 'معلم'}
               </Badge>
+              <button
+                className="btn ghost sm"
+                title="حذف این معلم"
+                aria-label={`حذف ${t.name}`}
+                onClick={() => {
+                  if (window.confirm(`«${t.name}» از فهرست معلم‌ها حذف شود؟`)) {
+                    removeTeacher(t.id);
+                    flashDirectory('معلم حذف شد.');
+                  }
+                }}
+              >
+                <Icon name="close" size={14} />
+              </button>
             </div>
           ))}
           <div className="row" style={{ marginTop: 12 }}>
-            <button className="btn sm">
+            <button className="btn sm" onClick={() => setTeacherOpen(true)}>
               <Icon name="plus" size={15} /> معلم جدید
             </button>
           </div>
         </Card>
       </div>
+
+      {directoryNotice && (
+        <div className="alert info" role="status">
+          <Icon name="check" size={16} />
+          <div>{directoryNotice}</div>
+        </div>
+      )}
+
+      <Modal
+        open={classOpen}
+        title="کلاس جدید"
+        onClose={() => {
+          setClassOpen(false);
+          setClassError('');
+        }}
+        footer={
+          <>
+            <button
+              className="btn primary"
+              onClick={() => {
+                const result = addClass({ name: className, track: classTrack, teacher: classTeacher });
+                if (!result.ok) {
+                  setClassError(result.error);
+                  return;
+                }
+                setClassName('');
+                setClassTeacher('');
+                setClassError('');
+                setClassOpen(false);
+                flashDirectory(`کلاس ${result.cls.name} ساخته شد.`);
+              }}
+            >
+              ساخت کلاس
+            </button>
+            <button className="btn" onClick={() => setClassOpen(false)}>
+              انصراف
+            </button>
+          </>
+        }
+      >
+        <div className="grid cols-2">
+          <div className="field">
+            <label>نام کلاس</label>
+            <input
+              className="input num"
+              value={className}
+              onChange={(event) => setClassName(event.target.value)}
+              placeholder="۱۲۷"
+            />
+          </div>
+          <div className="field">
+            <label>رشته</label>
+            <select
+              className="select"
+              value={classTrack}
+              onChange={(event) => setClassTrack(event.target.value as TrackId)}
+            >
+              <option value="math">ریاضی فیزیک</option>
+              <option value="science">علوم تجربی</option>
+            </select>
+          </div>
+        </div>
+        <div className="field">
+          <label>دبیر / مشاور (اختیاری)</label>
+          <input
+            className="input"
+            value={classTeacher}
+            onChange={(event) => setClassTeacher(event.target.value)}
+            placeholder="خانم موسوی"
+          />
+        </div>
+        {classError && <div className="small" style={{ color: '#e03131' }}>{classError}</div>}
+        <div className="tiny muted">
+          پایه دوازدهم؛ کلاس تازه در فهرست کلاس‌ها، فیلتر بالای صفحه و آپلود اکسل می‌آید.
+        </div>
+      </Modal>
+
+      <Modal
+        open={teacherOpen}
+        title="معلم جدید"
+        onClose={() => {
+          setTeacherOpen(false);
+          setTeacherError('');
+        }}
+        footer={
+          <>
+            <button
+              className="btn primary"
+              onClick={() => {
+                const result = addTeacher({ name: teacherName, role: teacherRole, classes: teacherClasses });
+                if (!result.ok) {
+                  setTeacherError(result.error);
+                  return;
+                }
+                setTeacherName('');
+                setTeacherRole('');
+                setTeacherClasses('');
+                setTeacherError('');
+                setTeacherOpen(false);
+                flashDirectory(`${result.teacher.name} به فهرست معلم‌ها اضافه شد.`);
+              }}
+            >
+              افزودن معلم
+            </button>
+            <button className="btn" onClick={() => setTeacherOpen(false)}>
+              انصراف
+            </button>
+          </>
+        }
+      >
+        <div className="grid cols-2">
+          <div className="field">
+            <label>نام و نام خانوادگی</label>
+            <input
+              className="input"
+              value={teacherName}
+              onChange={(event) => setTeacherName(event.target.value)}
+              placeholder="آقای رستمی"
+            />
+          </div>
+          <div className="field">
+            <label>سمت / درس</label>
+            <input
+              className="input"
+              value={teacherRole}
+              onChange={(event) => setTeacherRole(event.target.value)}
+              placeholder="دبیر فیزیک"
+            />
+          </div>
+        </div>
+        <div className="field">
+          <label>کلاس‌ها (اختیاری)</label>
+          <input
+            className="input"
+            value={teacherClasses}
+            onChange={(event) => setTeacherClasses(event.target.value)}
+            placeholder="۱۲۳ ریاضی فیزیک · ۱۲۴ تجربی"
+          />
+        </div>
+        {teacherError && <div className="small" style={{ color: '#e03131' }}>{teacherError}</div>}
+      </Modal>
 
       <Card title="دروس و ضریب‌ها" subtitle="میانگین‌ها وزنی محاسبه می‌شوند؛ ضریب هر درس اینجا تعیین می‌شود" flush>
         <div className="table-wrap">

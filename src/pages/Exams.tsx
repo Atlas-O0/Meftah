@@ -10,21 +10,37 @@ import {
   type SeriesId,
 } from '../data/mock';
 import { fa, faDate, faPct, faScore } from '../lib/fa';
-import { examPercentForClass, examRawForClass, seriesValueForSchool } from '../lib/stats';
+import {
+  examPercentForClass,
+  examRawForClass,
+  seriesPercentForClass,
+  seriesScoreForClass,
+  seriesValueForSchool,
+} from '../lib/stats';
+import { useClassFilter } from '../lib/classFilter';
 import { Badge, Card, Icon } from '../components/ui';
 
 function SeriesRow({
   item,
   selected,
+  classFilter,
   onSelect,
 }: {
   item: ExamSeries;
   selected: boolean;
+  classFilter: string;
   onSelect: () => void;
 }) {
-  const rows = exams.filter((e) => e.seriesId === item.id);
+  const rows = exams.filter(
+    (e) => e.seriesId === item.id && (classFilter === 'all' || e.classId === classFilter),
+  );
   const isPercent = item.kind === 'percent';
-  const avg = seriesValueForSchool(item.id);
+  const avg =
+    classFilter === 'all'
+      ? seriesValueForSchool(item.id)
+      : isPercent
+        ? seriesPercentForClass(classFilter, item.id)
+        : seriesScoreForClass(classFilter, item.id);
   const rounds = [...new Set(rows.map((e) => e.round))].length;
   const roundTitles = [...new Set(rows.map((e) => e.title))];
 
@@ -64,10 +80,12 @@ function SeriesRow({
 
 export default function Exams() {
   const [seriesId, setSeriesId] = useState<SeriesId>('ghalamchi');
+  const classFilter = useClassFilter();
   const seriesItem = seriesById(seriesId);
   const isPercent = seriesItem.kind === 'percent';
+  const className = classes.find((c) => c.id === classFilter)?.name;
   const rows = exams
-    .filter((e) => e.seriesId === seriesId)
+    .filter((e) => e.seriesId === seriesId && (classFilter === 'all' || e.classId === classFilter))
     .sort((left, right) => left.round - right.round || left.classId.localeCompare(right.classId));
 
   return (
@@ -92,7 +110,7 @@ export default function Exams() {
                     <th>حداکثر</th>
                     <th>تعداد</th>
                     <th>دورها</th>
-                    <th>میانگین مدرسه</th>
+                    <th>{classFilter === 'all' ? 'میانگین مدرسه' : `میانگین ${className ?? 'کلاس'}`}</th>
                     <th>قالب</th>
                     <th />
                   </tr>
@@ -103,6 +121,7 @@ export default function Exams() {
                       key={item.id}
                       item={item}
                       selected={seriesId === item.id}
+                      classFilter={classFilter}
                       onSelect={() => setSeriesId(item.id)}
                     />
                   ))}
@@ -114,7 +133,7 @@ export default function Exams() {
       })}
 
       <Card
-        title={`آزمون‌های ${seriesItem.name}`}
+        title={`آزمون‌های ${seriesItem.name}${classFilter === 'all' ? '' : ` — کلاس ${className ?? ''}`}`}
         subtitle={`${fa(rows.length)} آزمون · ${
           isPercent ? 'درصدی از ۱۰۰' : `نمره‌ای از ${fa(seriesItem.maxScore)}`
         } · ${seriesItem.templateNote}`}
@@ -176,7 +195,11 @@ export default function Exams() {
               {rows.length === 0 && (
                 <tr>
                   <td colSpan={7}>
-                    <div className="empty">برای این سری آزمونی ثبت نشده است.</div>
+                    <div className="empty">
+                      {classFilter === 'all'
+                        ? 'برای این سری آزمونی ثبت نشده است.'
+                        : `برای کلاس ${className ?? ''} در این سری آزمونی ثبت نشده است.`}
+                    </div>
                   </td>
                 </tr>
               )}

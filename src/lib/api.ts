@@ -117,6 +117,8 @@ export const backupUrl = () => apiUrl('/api/backup');
 
 export interface AppSettings {
   subjectThresholds?: Record<string, unknown>;
+  /** کلاس‌ها و معلم‌های ساخته‌شده در تنظیمات */
+  directory?: { classes?: unknown[]; teachers?: unknown[] };
 }
 
 export async function fetchSettings(): Promise<AppSettings | null> {

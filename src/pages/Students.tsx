@@ -1,14 +1,39 @@
 import { useMemo, useState } from 'react';
-import { classes, series, students, trackShortLabels } from '../data/mock';
+import { classes, series, students, trackShortLabels, type Student } from '../data/mock';
 import { fa, faPct, faScore, initials } from '../lib/fa';
 import { levelForStudentInSeries, scoreAverageForStudent, seriesPercentForStudent } from '../lib/stats';
+import { appendSavedImports } from '../lib/persist';
+import { setClassFilter, useClassFilter } from '../lib/classFilter';
 import { Badge, Card, Icon, Modal, Progress } from '../components/ui';
+
+const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
+const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+
+/** کد دانش‌آموزی: فقط رقم، فارسی/عربی هم قابل قبول */
+function normalizeCode(input: string): string {
+  const digits = Array.from(input)
+    .map((char) => {
+      const p = PERSIAN_DIGITS.indexOf(char);
+      if (p >= 0) return String(p);
+      const a = ARABIC_DIGITS.indexOf(char);
+      return a >= 0 ? String(a) : char;
+    })
+    .join('')
+    .replace(/\D/g, '');
+  return digits.replace(/^0+/, '');
+}
+
+const emptyForm = () => ({ name: '', code: '', classId: classes[0]?.id ?? '', phone: '', guardian: '' });
 
 export default function Students() {
   const [query, setQuery] = useState('');
-  const [classId, setClassId] = useState('all');
+  const classId = useClassFilter();
   const [open, setOpen] = useState(false);
   const [toast, setToast] = useState('');
+  const [form, setForm] = useState(emptyForm);
+  const [formError, setFormError] = useState('');
+  /* فهرست دانش‌آموزان بیرون از state است؛ با این شمارنده بعد از ثبت دوباره حساب می‌شود */
+  const [dataVersion, setDataVersion] = useState(0);
 
   const rows = useMemo(() => {
     return students
@@ -21,7 +46,53 @@ export default function Students() {
         score: scoreAverageForStudent(s.id),
         level: levelForStudentInSeries(s.id, 'ghalamchi'),
       }));
-  }, [query, classId]);
+  }, [query, classId, dataVersion]);
+
+  const classOptions = classes;
+
+  const saveStudent = () => {
+    const name = form.name.trim().replace(/\s+/g, ' ');
+    if (name.length < 3) {
+      setFormError('نام و نام خانوادگی را کامل وارد کن.');
+      return;
+    }
+    const targetClass = form.classId || classes[0]?.id;
+    if (!targetClass) {
+      setFormError('کلاسی انتخاب نشده است.');
+      return;
+    }
+    const used = new Set(students.map((student) => normalizeCode(student.code)).filter(Boolean));
+    let code = normalizeCode(form.code);
+    if (code && used.has(code)) {
+      setFormError('این کد دانش‌آموزی قبلاً ثبت شده است.');
+      return;
+    }
+    if (!code) {
+      let next = 900000 + students.length + 1;
+      while (used.has(String(next))) next += 1;
+      code = String(next);
+    }
+    const student: Student = {
+      id: `m-${Date.now().toString(36)}`,
+      name,
+      code,
+      classId: targetClass,
+      phone: form.phone.trim(),
+      guardian: form.guardian.trim(),
+      ability: 0.75,
+      trend: 0,
+      maz: true,
+    };
+    students.push(student);
+    setDataVersion((value) => value + 1);
+    /* همین‌جا در مرورگر ذخیره می‌شود و اگر سرور بالاست در دیتابیس هم می‌نشیند */
+    appendSavedImports({ students: [student], exams: [], scores: [] });
+    setForm(emptyForm());
+    setFormError('');
+    setOpen(false);
+    setToast(`${name} با کد ${fa(code)} به کلاس ${classes.find((c) => c.id === targetClass)?.name} اضافه شد.`);
+    window.setTimeout(() => setToast(''), 6000);
+  };
 
   return (
     <div className="stack">
@@ -36,14 +107,14 @@ export default function Students() {
           />
         </div>
         <div className="chip-row">
-          <button className={`chip${classId === 'all' ? ' active' : ''}`} onClick={() => setClassId('all')}>
+          <button className={`chip${classId === 'all' ? ' active' : ''}`} onClick={() => setClassFilter('all')}>
             همه ({fa(students.length)})
           </button>
           {classes.map((c) => (
             <button
               key={c.id}
               className={`chip${classId === c.id ? ' active' : ''}`}
-              onClick={() => setClassId(c.id)}
+              onClick={() => setClassFilter(c.id)}
             >
               {c.name}
             </button>
@@ -134,8 +205,9 @@ export default function Students() {
       <div className="alert info">
         <Icon name="alert" size={16} />
         <div>
-          در این نسخه‌ی نمایشی فرم «دانش‌آموز جدید» چیزی ذخیره نمی‌کند. در مرحله‌ی بعد، همین فرم در
-          دیتابیس SQLite ثبت می‌شود و کد دانش‌آموزی یکتا ساخته می‌شود.
+          لیست دانش‌آموزان از خود فایل‌های اکسل هم ساخته می‌شود: در صفحه‌ی «آپلود اکسل»، هر نامی که
+          پروفایل نداشته باشد هنگام تأیید پروفایل تازه می‌گیرد. ثبت دستی هم با دکمه‌ی «دانش‌آموز جدید»
+          ممکن است و کد خالی خودکار و یکتا ساخته می‌شود.
         </div>
       </div>
 
@@ -145,16 +217,16 @@ export default function Students() {
         onClose={() => setOpen(false)}
         footer={
           <>
-            <button
-              className="btn primary"
-              onClick={() => {
-                setOpen(false);
-                setToast('نمایشی: اطلاعات ثبت نشد. در نسخه‌ی بعدی در دیتابیس ذخیره می‌شود.');
-              }}
-            >
+            <button className="btn primary" onClick={saveStudent}>
               ثبت دانش‌آموز
             </button>
-            <button className="btn" onClick={() => setOpen(false)}>
+            <button
+              className="btn"
+              onClick={() => {
+                setOpen(false);
+                setFormError('');
+              }}
+            >
               انصراف
             </button>
           </>
@@ -163,29 +235,56 @@ export default function Students() {
         <div className="grid cols-2">
           <div className="field">
             <label>نام و نام خانوادگی</label>
-            <input className="input" placeholder="مثلاً زهرا محمدی" />
+            <input
+              className="input"
+              placeholder="مثلاً زهرا محمدی"
+              value={form.name}
+              onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+            />
           </div>
           <div className="field">
             <label>کد دانش‌آموزی</label>
-            <input className="input" placeholder="۴۰۲۵" />
+            <input
+              className="input num"
+              placeholder="خالی بگذاری خودکار ساخته می‌شود"
+              value={form.code}
+              onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))}
+            />
           </div>
           <div className="field">
             <label>کلاس</label>
-            <select className="select">
-              {classes.map((c) => (
-                <option key={c.id}>{c.name}</option>
+            <select
+              className="select"
+              value={form.classId}
+              onChange={(event) => setForm((prev) => ({ ...prev, classId: event.target.value }))}
+            >
+              {classOptions.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} — {trackShortLabels[c.track]}
+                </option>
               ))}
             </select>
           </div>
           <div className="field">
-            <label>تلفن ولی</label>
-            <input className="input" placeholder="۰۹۱۲…" />
+            <label>تلفن دانش‌آموز</label>
+            <input
+              className="input"
+              placeholder="۰۹۱۲…"
+              value={form.phone}
+              onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+            />
           </div>
         </div>
         <div className="field">
-          <label>یادداشت</label>
-          <textarea className="input" placeholder="توضیح اختیاری" />
+          <label>تلفن ولی</label>
+          <input
+            className="input"
+            placeholder="۰۹۱۲…"
+            value={form.guardian}
+            onChange={(event) => setForm((prev) => ({ ...prev, guardian: event.target.value }))}
+          />
         </div>
+        {formError && <div className="small" style={{ color: '#e03131' }}>{formError}</div>}
         <div className="tiny muted">
           فیلدهای سری‌ها ({series.map((s) => s.short).join(' / ')}) خودکار از کارنامه‌ها پر می‌شوند.
         </div>

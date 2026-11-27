@@ -10,6 +10,7 @@ import { isLoggedIn, markLoggedOut } from './auth';
 import { loadSavedImports } from './persist';
 import { replaceRecords } from './records';
 import { initSubjectThresholds } from './thresholds';
+import { syncDirectory } from './directory';
 
 export const dataSource = {
   online: false,
@@ -46,6 +47,7 @@ export async function initDataSource(): Promise<void> {
   scores.push(...data.scores);
   replaceRecords(data.records);
   await initSubjectThresholds();
+  await syncDirectory();
 
   dataSource.loadedAt = new Date().toISOString();
 }

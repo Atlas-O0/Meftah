@@ -1107,3 +1107,68 @@ table.table {
     box-shadow: none;
   }
 }
+
+/* ---------------- topbar popover (هشدارها) ---------------- */
+
+.topbar .btn {
+  position: relative;
+}
+
+.bell-dot {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  line-height: 17px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.popover-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 78;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 79;
+  width: 250px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 8px;
+  text-align: right;
+}
+
+.popover-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 6px;
+  border-radius: 8px;
+}
+
+.popover-item:hover {
+  background: var(--surface-2);
+}
+
+.popover-all {
+  display: block;
+  margin-top: 6px;
+  padding: 8px 6px 2px;
+  border-top: 1px solid var(--line-2);
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 600;
+}
