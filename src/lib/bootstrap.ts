@@ -11,6 +11,7 @@ import { loadSavedImports } from './persist';
 import { replaceRecords } from './records';
 import { initSubjectThresholds } from './thresholds';
 import { syncDirectory } from './directory';
+import { initScoring } from './scoring';
 
 export const dataSource = {
   online: false,
@@ -48,6 +49,7 @@ export async function initDataSource(): Promise<void> {
   replaceRecords(data.records);
   await initSubjectThresholds();
   await syncDirectory();
+  await initScoring();
 
   dataSource.loadedAt = new Date().toISOString();
 }

@@ -219,8 +219,8 @@ export function classComparison(seriesId: SeriesId) {
   }));
 }
 
-export function seriesTrend(seriesId: SeriesId) {
-  const list = exams.filter((e) => e.seriesId === seriesId);
+export function seriesTrend(seriesId: SeriesId, classId?: string) {
+  const list = exams.filter((e) => e.seriesId === seriesId && (!classId || e.classId === classId));
   const maxRound = list.reduce((max, e) => Math.max(max, e.round), 0);
   const rounds = Array.from({ length: maxRound }, (_, i) => i + 1);
   return rounds.map((round) => {
@@ -233,8 +233,9 @@ export function seriesTrend(seriesId: SeriesId) {
   });
 }
 
-export function needsAttention(limit = 5) {
+export function needsAttention(limit = 5, classId?: string) {
   const rows = students
+    .filter((student) => !classId || student.classId === classId)
     .map((student) => {
       const own = seriesPercentForStudent(student.id, 'ghalamchi');
       const level = levelForStudentInSeries(student.id, 'ghalamchi');

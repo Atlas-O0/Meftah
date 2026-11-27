@@ -128,6 +128,25 @@ export default function Students() {
 
       {toast && <div className="alert info">{toast}</div>}
 
+      {students.length === 0 && (
+        <Card title="هنوز دانش‌آموزی ثبت نشده است">
+          <div className="stack" style={{ gap: 10 }}>
+            <div className="small" style={{ lineHeight: 2 }}>
+              با آپلود فایل اکسل کارنامه، پروفایل‌ها از روی ستون نام ساخته می‌شوند؛ یا همین‌جا دستی اضافه کن.
+            </div>
+            <div className="row">
+              <a className="btn primary" href="#/upload">
+                آپلود اکسل
+              </a>
+              <button className="btn" onClick={() => setOpen(true)}>
+                دانش‌آموز جدید
+              </button>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {students.length > 0 && (
       <Card flush>
         <div className="table-wrap">
           <table className="table">
@@ -201,6 +220,7 @@ export default function Students() {
           </table>
         </div>
       </Card>
+      )}
 
       <div className="alert info">
         <Icon name="alert" size={16} />

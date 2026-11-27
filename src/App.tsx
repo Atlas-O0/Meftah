@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import Layout, { Login } from './components/Layout';
-import Dashboard from './pages/Dashboard';
-import Students from './pages/Students';
-import StudentProfile from './pages/StudentProfile';
-import Exams from './pages/Exams';
-import ExamEntry from './pages/ExamEntry';
-import Upload from './pages/Upload';
-import Compare from './pages/Compare';
-import Records from './pages/Records';
-import Settings from './pages/Settings';
 import { isLoggedIn } from './lib/auth';
+
+/* صفحه‌ها جدا بارگیری می‌شوند تا بازکردن اول سایت سبک باشد */
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Students = lazy(() => import('./pages/Students'));
+const StudentProfile = lazy(() => import('./pages/StudentProfile'));
+const Exams = lazy(() => import('./pages/Exams'));
+const ExamEntry = lazy(() => import('./pages/ExamEntry'));
+const Upload = lazy(() => import('./pages/Upload'));
+const Compare = lazy(() => import('./pages/Compare'));
+const Records = lazy(() => import('./pages/Records'));
+const Settings = lazy(() => import('./pages/Settings'));
 
 function useRoute() {
   const read = () => window.location.hash.replace(/^#/, '') || '/';
@@ -27,7 +29,7 @@ export default function App() {
   const path = useRoute();
 
   /* بعد از ورود، صفحه دوباره بارگذاری می‌شود تا داده‌ی دیتابیس خوانده شود */
-  if (!authed) return <Login onSuccess={() => window.location.reload()} />;
+  if (!authed) return <Login onSuccess={() => { setAuthed(true); window.location.reload(); }} />;
 
   const parts = path.split('/').filter(Boolean);
 
@@ -75,7 +77,7 @@ export default function App() {
 
   return (
     <Layout path={path} title={title} subtitle={subtitle}>
-      {page}
+      <Suspense fallback={<div className="page-loading">در حال بارگذاری…</div>}>{page}</Suspense>
     </Layout>
   );
 }

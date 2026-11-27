@@ -9,7 +9,13 @@ const root = createRoot(document.getElementById('root')!);
 
 async function start() {
   root.render(
-    <div style={{ padding: 32, fontFamily: 'Vazirmatn, sans-serif', color: '#5b6475' }}>در حال بارگذاری…</div>,
+    <div className="boot">
+      <div className="brand-mark">م</div>
+      <div className="boot-text">در حال بارگذاری…</div>
+      <div className="boot-bar">
+        <span />
+      </div>
+    </div>,
   );
   await initDataSource();
   root.render(

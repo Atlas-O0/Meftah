@@ -14,19 +14,30 @@ import { fa, faDate, faPct, faScore } from '../lib/fa';
 import {
   classComparison,
   needsAttention,
-  scoreAverageForSchool,
+  scoreAverageForStudent,
+  seriesPercentForClass,
   seriesPercentForSchool,
+  seriesScoreForClass,
   seriesScoreForSchool,
   seriesTrend,
   studentLabel,
 } from '../lib/stats';
+import { useClassFilter } from '../lib/classFilter';
 import { Badge, Card, ChartTip, Progress, StatCard, axisStyle, chartTicks } from '../components/ui';
 
 export default function Dashboard() {
-  const classData = classComparison('ghalamchi');
-  const ghalamchiTrend = seriesTrend('ghalamchi');
-  const mazTrend = seriesTrend('maz');
-  const moshavereTrend = seriesTrend('moshavere');
+  const classFilter = useClassFilter();
+  const className = classes.find((cls) => cls.id === classFilter)?.name;
+  const scope = classFilter === 'all' ? undefined : classFilter;
+  const viewStudents = scope ? students.filter((student) => student.classId === scope) : students;
+  const viewExams = scope ? exams.filter((exam) => exam.classId === scope) : exams;
+
+  const classData = scope
+    ? classComparison('ghalamchi').filter((row) => row.name === className)
+    : classComparison('ghalamchi');
+  const ghalamchiTrend = seriesTrend('ghalamchi', scope);
+  const mazTrend = seriesTrend('maz', scope);
+  const moshavereTrend = seriesTrend('moshavere', scope);
   const trendData = ghalamchiTrend.map((row, i) => ({
     name: row.name,
     ghalamchi: row.percent,
@@ -34,42 +45,75 @@ export default function Dashboard() {
     moshavere: moshavereTrend[i]?.percent ?? null,
   }));
 
-  const attention = needsAttention(5);
-  const scoreAvg = scoreAverageForSchool();
+  const attention = needsAttention(5, scope);
+  const scoreValues = viewStudents
+    .map((student) => scoreAverageForStudent(student.id))
+    .filter((value): value is number => value !== null);
+  const scoreAvg = scoreValues.length
+    ? scoreValues.reduce((sum, value) => sum + value, 0) / scoreValues.length
+    : 0;
+  const ghalamchiAvg = scope
+    ? seriesPercentForClass(scope, 'ghalamchi')
+    : seriesPercentForSchool('ghalamchi');
+  const scopeLabel = scope ? `کلاس ${className}` : 'همه‌ی کلاس‌ها';
+
+  if (students.length === 0) {
+    return (
+      <Card title="هنوز دانش‌آموزی ثبت نشده است">
+        <div className="stack" style={{ gap: 10 }}>
+          <div className="small" style={{ lineHeight: 2 }}>
+            برای شروع، فایل کارنامه‌ی اکسل را آپلود کن؛ پروفایل دانش‌آموزان از روی ستون نام ساخته می‌شود یا
+            از صفحه‌ی دانش‌آموزان دستی اضافه کن.
+          </div>
+          <div className="row">
+            <a className="btn primary" href="#/upload">
+              آپلود اکسل
+            </a>
+            <a className="btn" href="#/students">
+              افزودن دانش‌آموز
+            </a>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="stack">
       <div className="grid stats">
         <StatCard
           label="دانش‌آموزان"
-          value={fa(students.length)}
-          foot={`در ${fa(classes.length)} کلاس فعال`}
+          value={fa(viewStudents.length)}
+          foot={scope ? scopeLabel : `در ${fa(classes.length)} کلاس فعال`}
           icon="users"
         />
         <StatCard
           label="آزمون‌های ثبت‌شده"
-          value={fa(exams.length)}
-          foot={`${fa(series.length)} سری جدا · درصدی و نمره‌ای`}
+          value={fa(viewExams.length)}
+          foot={scope ? scopeLabel : `${fa(series.length)} سری جدا · درصدی و نمره‌ای`}
           icon="exams"
         />
         <StatCard
           label="میانگین قلمچی"
-          value={faPct(seriesPercentForSchool('ghalamchi'))}
-          foot="درصدی — همه‌ی کلاس‌ها"
+          value={faPct(ghalamchiAvg)}
+          foot={scope ? `درصدی — ${scopeLabel}` : 'درصدی — همه‌ی کلاس‌ها'}
           icon="compare"
           tone="#4c6ef5"
         />
         <StatCard
           label="میانگین نمره‌ای‌ها"
           value={`${faScore(scoreAvg)} از ${fa(20)}`}
-          foot="کپسول، مستمرها و نوبت‌ها"
+          foot={scope ? scopeLabel : 'کپسول، مستمرها و نوبت‌ها'}
           icon="dashboard"
           tone="#0ca678"
         />
       </div>
 
       <div className="grid cols-2">
-        <Card title="میانگین قلمچی هر کلاس" subtitle="درصدی — هر کلاس جدا حساب می‌شود">
+        <Card
+          title={scope ? `میانگین قلمچی ${scopeLabel}` : 'میانگین قلمچی هر کلاس'}
+          subtitle="درصدی — هر کلاس جدا حساب می‌شود"
+        >
           <div className="chart-wrap">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={classData} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
@@ -217,8 +261,8 @@ export default function Dashboard() {
       <Card title="خلاصه‌ی سری‌ها" subtitle="درصدی‌ها با درصد، نمره‌ای‌ها با نمره از ۲۰" flush>
         <div className="grid auto" style={{ padding: 16 }}>
           {series.map((s) => {
-            const pct = seriesPercentForSchool(s.id);
-            const raw = s.kind === 'score' ? seriesScoreForSchool(s.id) : null;
+            const pct = scope ? seriesPercentForClass(scope, s.id) : seriesPercentForSchool(s.id);
+            const raw = s.kind === 'score' ? (scope ? seriesScoreForClass(scope, s.id) : seriesScoreForSchool(s.id)) : null;
             return (
               <div key={s.id} className="stack" style={{ gap: 8 }}>
                 <div className="row" style={{ gap: 8 }}>
@@ -229,7 +273,7 @@ export default function Dashboard() {
                 </div>
                 <div className="stack" style={{ gap: 6 }}>
                   <div className="row" style={{ justifyContent: 'space-between' }}>
-                    <span className="tiny muted">میانگین مدرسه</span>
+                    <span className="tiny muted">{scope ? `میانگین ${scopeLabel}` : 'میانگین مدرسه'}</span>
                     <span className="bold num small">
                       {raw !== null ? `${faScore(raw)} از ${fa(20)}` : faPct(pct)}
                     </span>

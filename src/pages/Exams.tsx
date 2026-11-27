@@ -98,6 +98,19 @@ export default function Exams() {
         </div>
       </div>
 
+      {exams.length === 0 && (
+        <Card title="هنوز آزمونی ثبت نشده است">
+          <div className="stack" style={{ gap: 10 }}>
+            <div className="small" style={{ lineHeight: 2 }}>
+              با آپلود فایل اکسل کارنامه، آزمون و نمره‌هایش ساخته می‌شوند.
+            </div>
+            <a className="btn primary" style={{ alignSelf: 'flex-start' }} href="#/upload">
+              آپلود اکسل
+            </a>
+          </div>
+        </Card>
+      )}
+
       {seriesGroups.map((group) => {
         const items = group.ids.map((id) => seriesById(id));
         return (

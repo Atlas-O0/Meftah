@@ -20,6 +20,15 @@ import {
   setSubjectThresholds,
   type SubjectThresholdMap,
 } from '../lib/thresholds';
+import {
+  defaultSeriesThresholds,
+  getSeriesThresholds,
+  getWeights,
+  resetSeriesThresholds,
+  resetWeights,
+  saveSeriesThresholds,
+  saveWeights,
+} from '../lib/scoring';
 import { Badge, Card, Icon, Modal, Progress } from '../components/ui';
 import {
   addClass,
@@ -49,6 +58,7 @@ export default function Settings() {
   const mode = getDataMode();
   const [subjectThresholds, setDraft] = useState<SubjectThresholdMap>(() => getSubjectThresholds());
   const [savedNotice, setSavedNotice] = useState('');
+  const [weights, setWeights] = useState<Record<string, number>>(() => getWeights());
   const online = isServerOnline() || dataSource.online;
   const [health, setHealth] = useState<ServerHealth | null>(null);
 
@@ -361,7 +371,7 @@ export default function Settings() {
               <tr>
                 <th>درس</th>
                 <th>رشته</th>
-                <th>ضریب</th>
+                <th style={{ width: 96 }}>ضریب</th>
                 <th style={{ width: 200 }}>وزن در میانگین</th>
                 <th>وضعیت</th>
               </tr>
@@ -373,9 +383,23 @@ export default function Settings() {
                   <td>
                     <Badge line>{subjectTrackLabels[s.track]}</Badge>
                   </td>
-                  <td className="num small">{fa(s.weight)}</td>
                   <td>
-                    <Progress value={(s.weight / 4) * 100} color="#4c6ef5" />
+                    <input
+                      className="input num"
+                      type="number"
+                      min={1}
+                      max={5}
+                      step={1}
+                      aria-label={`ضریب ${s.name}`}
+                      style={{ width: 64, height: 30, textAlign: 'center', padding: '0 4px' }}
+                      value={weights[s.id] ?? s.weight}
+                      onChange={(event) =>
+                        setWeights((prev) => ({ ...prev, [s.id]: Number(event.target.value) }))
+                      }
+                    />
+                  </td>
+                  <td>
+                    <Progress value={((weights[s.id] ?? s.weight) / 5) * 100} color="#4c6ef5" />
                   </td>
                   <td>
                     <Badge line>فعال</Badge>
@@ -384,6 +408,29 @@ export default function Settings() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="row" style={{ gap: 8, padding: '12px 16px', flexWrap: 'wrap' }}>
+          <button
+            className="btn primary"
+            onClick={() => {
+              saveWeights(weights);
+              setWeights(getWeights());
+              setSavedNotice('ضریب‌ها ذخیره شد — میانگین‌های وزنی از این به بعد با همین ضریب‌ها حساب می‌شوند.');
+              window.setTimeout(() => setSavedNotice(''), 4000);
+            }}
+          >
+            <Icon name="check" size={15} /> ذخیره‌ی ضریب‌ها
+          </button>
+          <button
+            className="btn"
+            onClick={() => {
+              setWeights(resetWeights());
+              setSavedNotice('ضریب‌ها به مقدار پیش‌فرض برگشت.');
+              window.setTimeout(() => setSavedNotice(''), 4000);
+            }}
+          >
+            پیش‌فرض
+          </button>
         </div>
       </Card>
 
@@ -569,6 +616,36 @@ export default function Settings() {
             </Card>
           );
         })}
+      </div>
+
+      <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+        <button
+          className="btn primary"
+          onClick={() => {
+            saveSeriesThresholds(thresholds);
+            setThresholds({ ...getSeriesThresholds() } as typeof thresholds);
+            setSavedNotice('مرز سطح سری‌ها ذخیره شد — برچسب‌های قوی/خوب/متوسط همه‌جا به‌روز می‌شوند.');
+            window.setTimeout(() => setSavedNotice(''), 4000);
+          }}
+        >
+          <Icon name="check" size={15} /> ذخیره‌ی مرز سری‌ها
+        </button>
+        <button
+          className="btn"
+          onClick={() => {
+            saveSeriesThresholds(defaultSeriesThresholds());
+            setThresholds({ ...getSeriesThresholds() } as typeof thresholds);
+            setSavedNotice('مرز سری‌ها به مقدار پیش‌فرض برگشت.');
+            window.setTimeout(() => setSavedNotice(''), 4000);
+          }}
+        >
+          پیش‌فرض سری‌ها
+        </button>
+        {savedNotice && (
+          <span className="small" style={{ color: '#0ca678' }}>
+            {savedNotice}
+          </span>
+        )}
       </div>
 
       <Card

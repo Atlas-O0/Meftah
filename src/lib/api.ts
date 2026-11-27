@@ -119,6 +119,9 @@ export interface AppSettings {
   subjectThresholds?: Record<string, unknown>;
   /** کلاس‌ها و معلم‌های ساخته‌شده در تنظیمات */
   directory?: { classes?: unknown[]; teachers?: unknown[] };
+  /** مرز سطح هر سری و ضریب درس‌ها */
+  seriesThresholds?: Record<string, unknown>;
+  subjectWeights?: Record<string, unknown>;
 }
 
 export async function fetchSettings(): Promise<AppSettings | null> {

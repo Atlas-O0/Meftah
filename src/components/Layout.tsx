@@ -39,8 +39,8 @@ export default function Layout({
   const [bellOpen, setBellOpen] = useState(false);
   const classFilter = useClassFilter();
   useDirectoryVersion();
-  const attention = needsAttention(5);
-  const filterable = path === '/students' || path === '/exams' || path === '/records';
+  const attention = needsAttention(5, classFilter === 'all' ? undefined : classFilter);
+  const filterable = path === '/' || path === '/students' || path === '/exams' || path === '/records';
 
   const isActive = (target: string) =>
     target === '/' ? path === '/' : path === target || path.startsWith(`${target}/`);

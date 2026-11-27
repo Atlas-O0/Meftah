@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { fa, faPct } from '../lib/fa';
 
 /* ---------------------------- icons ---------------------------- */
@@ -205,14 +205,26 @@ export function Modal({
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    closeRef.current?.focus();
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div className="modal-scrim" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className="row" style={{ marginBottom: 14 }}>
           <h2>{title}</h2>
           <div style={{ flex: 1 }} />
-          <button className="btn ghost sm" onClick={onClose} aria-label="بستن">
+          <button ref={closeRef} className="btn ghost sm" onClick={onClose} aria-label="بستن">
             <Icon name="close" />
           </button>
         </div>
