@@ -110,6 +110,7 @@ export interface DataPatch {
   scores?: ScoreRow[];
   records?: RecordRow[];
   removedRecords?: string[];
+  removedStudents?: string[];
 }
 
 const upsertStudent = db.prepare(`
@@ -172,7 +173,7 @@ export function bootstrap() {
 }
 
 export function applyPatch(patch: DataPatch) {
-  const counts = { students: 0, exams: 0, scores: 0, records: 0, removedRecords: 0 };
+  const counts = { students: 0, exams: 0, scores: 0, records: 0, removedRecords: 0, removedStudents: 0 };
   db.transaction(() => {
     for (const student of patch.students ?? []) {
       upsertStudent.run(
@@ -220,6 +221,13 @@ export function applyPatch(patch: DataPatch) {
     for (const id of patch.removedRecords ?? []) {
       db.prepare('DELETE FROM records WHERE id = ?').run(id);
       counts.removedRecords += 1;
+    }
+    /* حذف دانش‌آموز همراه نمره‌ها و گزارش‌هایش */
+    for (const id of patch.removedStudents ?? []) {
+      db.prepare('DELETE FROM scores WHERE student_id = ?').run(id);
+      db.prepare('DELETE FROM records WHERE student_id = ?').run(id);
+      db.prepare('DELETE FROM students WHERE id = ?').run(id);
+      counts.removedStudents += 1;
     }
     db.prepare('INSERT INTO log (at, note) VALUES (?, ?)').run(
       new Date().toISOString(),

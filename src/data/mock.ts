@@ -484,6 +484,15 @@ if (getDataMode() === 'real') {
 /* داده‌های واردشده از اکسل (در همین مرورگر ذخیره می‌شوند) */
 const savedImports = loadSavedImports();
 if (savedImports) {
+  const removed = new Set(savedImports.removedStudents ?? []);
+  if (removed.size > 0) {
+    for (let index = students.length - 1; index >= 0; index -= 1) {
+      if (removed.has(students[index].id)) students.splice(index, 1);
+    }
+    for (let index = scores.length - 1; index >= 0; index -= 1) {
+      if (removed.has(scores[index].studentId)) scores.splice(index, 1);
+    }
+  }
   const knownStudents = new Set(students.map((student) => student.id));
   for (const student of savedImports.students) {
     if (!knownStudents.has(student.id)) {

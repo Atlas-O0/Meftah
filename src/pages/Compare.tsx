@@ -30,6 +30,7 @@ import {
   toScale,
 } from '../lib/stats';
 import { Badge, Card, Progress, axisStyle, chartTicks } from '../components/ui';
+import { useClassFilter } from '../lib/classFilter';
 
 function ValueTip({ active, payload, label, format }: any) {
   if (!active || !payload?.length) return null;
@@ -64,11 +65,25 @@ const studentOption = (id: string) => {
 };
 
 export default function Compare() {
+  const classFilter = useClassFilter();
   const [seriesId, setSeriesId] = useState<SeriesId>('ghalamchi');
-  const [studentA, setStudentA] = useState('s1');
-  const [studentB, setStudentB] = useState('s7');
-  const [classA, setClassA] = useState('c121');
-  const [classB, setClassB] = useState('c123');
+
+  /* انتخاب‌های اولیه از داده‌ی موجود (و فیلتر کلاس) گرفته می‌شوند، نه شناسه‌های ثابت */
+  const [initial] = useState(() => {
+    const pool = classFilter === 'all' ? students : students.filter((s) => s.classId === classFilter);
+    const first = pool[0] ?? students[0];
+    const sameClass = first ? students.filter((s) => s.classId === first.classId) : [];
+    const second = sameClass.find((s) => s.id !== first?.id) ?? first;
+    const firstClass = first?.classId ?? classes[0]?.id ?? '';
+    const secondClass = classes.find((c) => c.id !== firstClass)?.id ?? firstClass;
+    return { a: first?.id ?? '', b: second?.id ?? '', classA: firstClass, classB: secondClass };
+  });
+
+  const [studentA, setStudentA] = useState(initial.a);
+  const [studentB, setStudentB] = useState(initial.b);
+  const [classA, setClassA] = useState(initial.classA);
+  const [classB, setClassB] = useState(initial.classB);
+  const filterClass = classes.find((c) => c.id === classFilter);
 
   const seriesItem = series.find((s) => s.id === seriesId)!;
   const isPercent = seriesItem.kind === 'percent';
@@ -177,6 +192,7 @@ export default function Compare() {
               ? 'درصدی — مقایسه‌ها از ۱۰۰'
               : `نمره‌ای — مقایسه‌ها از ${fa(seriesItem.maxScore)}`}{' '}
             · فقط داخل سری «{seriesItem.name}»
+            {filterClass ? ` · شروع از کلاس ${filterClass.name}` : ''}
           </span>
         </div>
       </Card>

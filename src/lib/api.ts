@@ -22,6 +22,7 @@ export interface DataPatch {
   scores?: Score[];
   records?: StudentRecord[];
   removedRecords?: string[];
+  removedStudents?: string[];
 }
 
 export interface ServerCounts {

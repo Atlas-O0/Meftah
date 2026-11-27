@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
-import { classes, series, students, trackShortLabels, type Student } from '../data/mock';
+import { classes, scores, series, students, trackShortLabels, type Student } from '../data/mock';
 import { fa, faPct, faScore, initials } from '../lib/fa';
 import { levelForStudentInSeries, scoreAverageForStudent, seriesPercentForStudent } from '../lib/stats';
-import { appendSavedImports } from '../lib/persist';
+import { appendSavedImports, removeSavedStudent } from '../lib/persist';
+import { getRecords, replaceRecords } from '../lib/records';
 import { setClassFilter, useClassFilter } from '../lib/classFilter';
 import { Badge, Card, Icon, Modal, Progress } from '../components/ui';
 
@@ -32,6 +33,7 @@ export default function Students() {
   const [toast, setToast] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
   /* فهرست دانش‌آموزان بیرون از state است؛ با این شمارنده بعد از ثبت دوباره حساب می‌شود */
   const [dataVersion, setDataVersion] = useState(0);
 
@@ -50,6 +52,31 @@ export default function Students() {
 
   const classOptions = classes;
 
+  const flash = (message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(''), 6000);
+  };
+
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(emptyForm());
+    setFormError('');
+    setOpen(true);
+  };
+
+  const openEdit = (student: Student) => {
+    setEditingId(student.id);
+    setForm({
+      name: student.name,
+      code: student.code,
+      classId: student.classId,
+      phone: student.phone,
+      guardian: student.guardian,
+    });
+    setFormError('');
+    setOpen(true);
+  };
+
   const saveStudent = () => {
     const name = form.name.trim().replace(/\s+/g, ' ');
     if (name.length < 3) {
@@ -61,17 +88,43 @@ export default function Students() {
       setFormError('کلاسی انتخاب نشده است.');
       return;
     }
-    const used = new Set(students.map((student) => normalizeCode(student.code)).filter(Boolean));
+    const editing = editingId ? students.find((student) => student.id === editingId) : undefined;
+    const used = new Set(
+      students
+        .filter((student) => student.id !== editing?.id)
+        .map((student) => normalizeCode(student.code))
+        .filter(Boolean),
+    );
     let code = normalizeCode(form.code);
     if (code && used.has(code)) {
       setFormError('این کد دانش‌آموزی قبلاً ثبت شده است.');
       return;
     }
     if (!code) {
-      let next = 900000 + students.length + 1;
-      while (used.has(String(next))) next += 1;
-      code = String(next);
+      if (editing) {
+        code = editing.code;
+      } else {
+        let next = 900000 + students.length + 1;
+        while (used.has(String(next))) next += 1;
+        code = String(next);
+      }
     }
+
+    if (editing) {
+      editing.name = name;
+      editing.code = code;
+      editing.classId = targetClass;
+      editing.phone = form.phone.trim();
+      editing.guardian = form.guardian.trim();
+      setDataVersion((value) => value + 1);
+      appendSavedImports({ students: [{ ...editing }], exams: [], scores: [] });
+      setOpen(false);
+      setEditingId(null);
+      setForm(emptyForm());
+      flash(`تغییرات ${name} ذخیره شد.`);
+      return;
+    }
+
     const student: Student = {
       id: `m-${Date.now().toString(36)}`,
       name,
@@ -90,8 +143,23 @@ export default function Students() {
     setForm(emptyForm());
     setFormError('');
     setOpen(false);
-    setToast(`${name} با کد ${fa(code)} به کلاس ${classes.find((c) => c.id === targetClass)?.name} اضافه شد.`);
-    window.setTimeout(() => setToast(''), 6000);
+    flash(`${name} با کد ${fa(code)} به کلاس ${classes.find((c) => c.id === targetClass)?.name} اضافه شد.`);
+  };
+
+  const deleteStudent = (student: Student) => {
+    const answer = window.confirm(
+      `«${student.name}» و همه‌ی نمره‌ها و گزارش‌هایش حذف شود؟ این کار برگشت‌پذیر نیست.`,
+    );
+    if (!answer) return;
+    const index = students.findIndex((item) => item.id === student.id);
+    if (index >= 0) students.splice(index, 1);
+    for (let i = scores.length - 1; i >= 0; i -= 1) {
+      if (scores[i].studentId === student.id) scores.splice(i, 1);
+    }
+    replaceRecords(getRecords().filter((record) => record.studentId !== student.id));
+    removeSavedStudent(student.id);
+    setDataVersion((value) => value + 1);
+    flash(`«${student.name}» حذف شد.`);
   };
 
   return (
@@ -121,7 +189,7 @@ export default function Students() {
           ))}
         </div>
         <div style={{ flex: 1 }} />
-        <button className="btn primary" onClick={() => setOpen(true)}>
+        <button className="btn primary" onClick={openCreate}>
           <Icon name="plus" /> دانش‌آموز جدید
         </button>
       </div>
@@ -138,7 +206,7 @@ export default function Students() {
               <a className="btn primary" href="#/upload">
                 آپلود اکسل
               </a>
-              <button className="btn" onClick={() => setOpen(true)}>
+              <button className="btn" onClick={openCreate}>
                 دانش‌آموز جدید
               </button>
             </div>
@@ -204,8 +272,20 @@ export default function Students() {
                   <td>
                     <Badge tone={level.tone as 'green' | 'blue' | 'amber' | 'red'}>{level.label}</Badge>
                   </td>
-                  <td className="tiny muted">
-                    <Icon name="arrow" size={16} />
+                  <td onClick={(event) => event.stopPropagation()}>
+                    <div className="row" style={{ gap: 4, justifyContent: 'flex-end' }}>
+                      <button className="btn ghost sm" onClick={() => openEdit(student)}>
+                        ویرایش
+                      </button>
+                      <button
+                        className="btn ghost sm"
+                        title="حذف دانش‌آموز"
+                        aria-label={`حذف ${student.name}`}
+                        onClick={() => deleteStudent(student)}
+                      >
+                        <Icon name="close" size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -233,17 +313,22 @@ export default function Students() {
 
       <Modal
         open={open}
-        title="دانش‌آموز جدید"
-        onClose={() => setOpen(false)}
+        title={editingId ? 'ویرایش دانش‌آموز' : 'دانش‌آموز جدید'}
+        onClose={() => {
+          setOpen(false);
+          setEditingId(null);
+          setFormError('');
+        }}
         footer={
           <>
             <button className="btn primary" onClick={saveStudent}>
-              ثبت دانش‌آموز
+              {editingId ? 'ذخیره‌ی تغییرات' : 'ثبت دانش‌آموز'}
             </button>
             <button
               className="btn"
               onClick={() => {
                 setOpen(false);
+                setEditingId(null);
                 setFormError('');
               }}
             >
