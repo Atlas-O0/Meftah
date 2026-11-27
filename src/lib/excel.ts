@@ -175,7 +175,10 @@ const isRankHeader = (cell: Cell) => /رتبه|تراز|نزده|غلط|صحیح
 
 const isNameHeader = (cell: Cell) => {
   const key = normKey(cell);
-  return key.includes('نام') && !/درس|آزمون|کلاس|رشته|دبیر|معلم|مدرسه/.test(key);
+  if (/خانوادگی|فامیل|پدر|مادر|ولی|تلفن|موبایل|کد|شماره|درس|آزمون|کلاس|رشته|دبیر|معلم|مدرسه/.test(key)) {
+    return false;
+  }
+  return key.includes('نام') || key.includes('دانشآموز') || key === 'اسم' || key.includes('مشخصات');
 };
 
 const isFamilyHeader = (cell: Cell) => /نامخانوادگی|خانوادگی|فامیل/.test(normKey(cell));
@@ -221,13 +224,13 @@ export function detectMapping(rows: Cell[][]): ColumnMapping | null {
 
     cells.forEach((cell, col) => {
       if (cell === null || cell === undefined || String(cell).trim() === '') return;
-      if (nameCol < 0 && isNameHeader(cell)) {
-        nameCol = col;
+      if (familyCol < 0 && isFamilyHeader(cell)) {
+        familyCol = col;
         used.add(col);
         return;
       }
-      if (familyCol < 0 && isFamilyHeader(cell)) {
-        familyCol = col;
+      if (nameCol < 0 && isNameHeader(cell)) {
+        nameCol = col;
         used.add(col);
         return;
       }
@@ -254,8 +257,16 @@ export function detectMapping(rows: Cell[][]): ColumnMapping | null {
       }
     });
 
-    const score = (nameCol >= 0 ? 2 : 0) + (codeCol >= 0 ? 1 : 0) + (classCol >= 0 ? 1 : 0) + subjectCols.length;
-    if (subjectCols.length === 0 || (nameCol < 0 && familyCol < 0 && codeCol < 0)) continue;
+    const hasIdentity = nameCol >= 0 || familyCol >= 0 || codeCol >= 0;
+    const score =
+      (nameCol >= 0 ? 3 : 0) +
+      (familyCol >= 0 ? 3 : 0) +
+      (codeCol >= 0 ? 1 : 0) +
+      (classCol >= 0 ? 1 : 0) +
+      subjectCols.length;
+    if (!hasIdentity) continue;
+    /* شیتی که فقط فهرست نام است (بدون ستون نمره) هم پذیرفته می‌شود تا از روی آن پروفایل ساخته شود */
+    if (subjectCols.length === 0 && nameCol < 0 && familyCol < 0) continue;
     if (score >= 3 && (!best || score > best.score)) {
       best = {
         row,

@@ -211,34 +211,52 @@ export function applyImport({ seriesId, title, date, drafts }: ApplyInput): Appl
 
     let studentId = draft.chosenId;
     if (!studentId) {
-      let code = parseCode(draft.code);
-      if (!code || usedCodes.has(code)) {
-        do {
-          code = String(900000 + nextNumber);
-          nextNumber += 1;
-        } while (usedCodes.has(code));
+      /* همین نام ممکن است در شیت دیگری از همین فایل آمده باشد؛ پروفایل تکراری ساخته نشود */
+      const nameKey = normKey(draft.name);
+      const sameName = nameKey
+        ? students.find((item) => item.classId === draft.classId && normKey(item.name) === nameKey)
+        : undefined;
+      if (sameName) {
+        studentId = sameName.id;
+      } else {
+        let code = parseCode(draft.code);
+        if (!code || usedCodes.has(code)) {
+          do {
+            code = String(900000 + nextNumber);
+            nextNumber += 1;
+          } while (usedCodes.has(code));
+        }
+        usedCodes.add(code);
+        const student: Student = {
+          id: `nx-${stamp}-${createdStudents.length + 1}`,
+          name: draft.name || `دانش‌آموز ${code}`,
+          code,
+          classId: draft.classId,
+          phone: '',
+          guardian: '',
+          ability: 0.75,
+          trend: 0,
+          maz: true,
+        };
+        students.push(student);
+        createdStudents.push(student);
+        studentId = student.id;
       }
-      usedCodes.add(code);
-      const student: Student = {
-        id: `nx-${stamp}-${createdStudents.length + 1}`,
-        name: draft.name || `دانش‌آموز ${code}`,
-        code,
-        classId: draft.classId,
-        phone: '',
-        guardian: '',
-        ability: 0.75,
-        trend: 0,
-        maz: true,
-      };
-      students.push(student);
-      createdStudents.push(student);
-      studentId = student.id;
     } else if (draft.status === 'other') {
       const student = students.find((item) => item.id === studentId);
       if (student && student.classId !== draft.classId) {
         student.classId = draft.classId;
         updatedStudents += 1;
       }
+    }
+
+    /* فایلی که فقط فهرست نام دارد نمره‌ای ندارد؛ پروفایل ساخته می‌شود ولی آزمون خالی ثبت نمی‌شود */
+    const scoreEntries = Object.entries(draft.values).filter(
+      ([, value]) => value !== null && value !== undefined,
+    ) as Array<[string, number]>;
+    if (scoreEntries.length === 0) {
+      applied += 1;
+      continue;
     }
 
     const examTitle = title.trim() || `${series.name} — ${date}`;
@@ -268,8 +286,7 @@ export function applyImport({ seriesId, title, date, drafts }: ApplyInput): Appl
       examByClass.set(draft.classId, exam);
     }
 
-    for (const [subjectId, value] of Object.entries(draft.values)) {
-      if (value === null || value === undefined) continue;
+    for (const [subjectId, value] of scoreEntries) {
       const existing = scores.find(
         (score) => score.studentId === studentId && score.examId === exam.id && score.subjectId === subjectId,
       );
